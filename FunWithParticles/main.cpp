@@ -19,6 +19,8 @@ void processButtonClick(Button *button, int i);
 void createNewParticle(struct particle *newParticle);
 void updateAsBall(struct particle *theParticle);
 void updateAsSpark(struct particle *theParticle);
+void drawSparkTrail(struct particle *spark);
+void drawText(ALLEGRO_FONT *font24);
 
 struct particle{
 	ALLEGRO_COLOR color;
@@ -26,13 +28,14 @@ struct particle{
 	int age;
 };
 
-float co_of_restitution = -0.95;
-float gravity = 6;
-float explosiveness = 10;
+float co_of_restitution = -0.85;
+float gravity = 9.8;
+float explosiveness = 15;
 int mouseX = 0;
 int mouseY = 0;
 int particleType = SELECT_BALL; //i.e. ball, spark, etc.
 int particlesPerTick = 1;
+int sparkliness = 5;
 
 int main(void){
 	struct particle liveParticles[maxParticles];
@@ -141,23 +144,14 @@ int main(void){
 			al_draw_rectangle(mouseX,mouseY,mouseX,mouseY,al_map_rgb(0,0,100), 20);
 			for(int i=0; i<maxParticles; i++){
 				al_draw_rounded_rectangle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].x, liveParticles[i].y, 1, 1, liveParticles[i].color, 5);
+				if(particleType == SELECT_SPARK)
+					drawSparkTrail(&liveParticles[i]);
 			}
 			for(int i=0; i<NUM_BUTTONS; i++){
 				buttons[i]->draw();
 			}
 			
-			al_draw_textf(font24, al_map_rgb(50,250,50), 15, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
-			al_draw_text(font24, al_map_rgb(50,250,50), 355, 15, 0, "+  -");
-			al_draw_textf(font24, al_map_rgb(50,250,50), 15, 45, 0, "Gravity: %f", gravity * -1);
-			al_draw_text(font24, al_map_rgb(50,250,50), 195, 45, 0, "+  -");
-			al_draw_textf(font24, al_map_rgb(50,250,50), 15, 75, 0, "Explosiveness: %f", explosiveness);
-			al_draw_text(font24, al_map_rgb(50,250,50), 245, 75, 0, "+  -");
-			al_draw_textf(font24, al_map_rgb(50,250,50), 15, 105, 0, "Particles Per Tick: %i", particlesPerTick);
-			al_draw_text(font24, al_map_rgb(50,250,50), 230, 105, 0, "+  -");
-			al_draw_text(font24, al_map_rgb(50,250,50), width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
-			al_draw_text(font24, al_map_rgb(50,250,50), width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
-			al_draw_text(font24, al_map_rgb(50,250,50), width-40, 75, ALLEGRO_ALIGN_RIGHT, "Frozen");
-			al_draw_rectangle(width-23, (particleType-4)*30 + 21, width-17, (particleType-4)*30 + 28, al_map_rgb(100,100,100), 6);
+			drawText(font24);
 
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
@@ -279,5 +273,26 @@ void updateAsSpark(struct particle * theParticle){
 			theParticle->y = 0;
 		else
 			theParticle->y = height;
+	}
+};
+
+void drawText(ALLEGRO_FONT *font24){
+	al_draw_textf(font24, al_map_rgb(50,250,50), 15, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
+	al_draw_text(font24, al_map_rgb(50,250,50), 355, 15, 0, "+  -");
+	al_draw_textf(font24, al_map_rgb(50,250,50), 15, 45, 0, "Gravity: %f", gravity * -1);
+	al_draw_text(font24, al_map_rgb(50,250,50), 195, 45, 0, "+  -");
+	al_draw_textf(font24, al_map_rgb(50,250,50), 15, 75, 0, "Explosiveness: %f", explosiveness);
+	al_draw_text(font24, al_map_rgb(50,250,50), 245, 75, 0, "+  -");
+	al_draw_textf(font24, al_map_rgb(50,250,50), 15, 105, 0, "Particles Per Tick: %i", particlesPerTick);
+	al_draw_text(font24, al_map_rgb(50,250,50), 230, 105, 0, "+  -");
+	al_draw_text(font24, al_map_rgb(50,250,50), width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
+	al_draw_text(font24, al_map_rgb(50,250,50), width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
+	al_draw_text(font24, al_map_rgb(50,250,50), width-40, 75, ALLEGRO_ALIGN_RIGHT, "Frozen");
+	al_draw_rectangle(width-23, (particleType-4)*30 + 21, width-17, (particleType-4)*30 + 28, al_map_rgb(100,100,100), 6);
+};
+
+void drawSparkTrail(struct particle *spark){
+	for(int i=0; i<sparkliness; i++){
+		al_draw_pixel(spark->x-(3*i*spark->vx)+(rand()%10 - 5), spark->y-(3*i*spark->vy)+(rand()%6 - 3), spark->color);
 	}
 };
