@@ -6,8 +6,8 @@
 #include "Button.h"
 
 enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FROZEN,
-	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN};
-const int NUM_BUTTONS = 11;
+	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN};
+const int NUM_BUTTONS = 13;
 
 const double golden_ratio = 0.618033988749895;
 const int FPS = 60;
@@ -17,15 +17,15 @@ const int height = 800;
 
 void processButtonClick(Button *button, int i);
 void createNewParticle(struct particle *newParticle);
+void createNewSparkle(struct particle *spark, struct particle *sparkle);
 void updateAsBall(struct particle *theParticle);
 void updateAsSpark(struct particle *theParticle);
-void drawSparkTrail(struct particle *spark);
 void drawText(ALLEGRO_FONT *font24);
 
 struct particle{
 	ALLEGRO_COLOR color;
 	float x, y, vx, vy;
-	int age;
+	int age, size;
 };
 
 float co_of_restitution = -0.85;
@@ -75,6 +75,8 @@ int main(void){
 	buttons[EXPLOSIVE_DOWN] = new Button(275,75,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[PART_PER_TICK_UP] = new Button(225,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[PART_PER_TICK_DOWN] = new Button(260,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[SPARK_TRAIL_UP] = new Button(225,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[SPARK_TRAIL_DOWN] = new Button(260,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	
 	font24 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 24, 0);
 	event_queue = al_create_event_queue();
@@ -110,8 +112,13 @@ int main(void){
 			for(int i=0;i<maxParticles;i++){
 				if(particleType == SELECT_BALL)
 					updateAsBall(&liveParticles[i]);
-				else if(particleType == SELECT_SPARK)
+				else if(particleType == SELECT_SPARK){
 					updateAsSpark(&liveParticles[i]);
+					if(i%sparkliness == 0){
+						createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
+						curParticle = (curParticle+1) % maxParticles;
+					}
+				}
 			}
 			break;
 		case ALLEGRO_EVENT_MOUSE_AXES:
@@ -143,9 +150,7 @@ int main(void){
 			redraw = false;
 			al_draw_rectangle(mouseX,mouseY,mouseX,mouseY,al_map_rgb(0,0,100), 20);
 			for(int i=0; i<maxParticles; i++){
-				al_draw_rounded_rectangle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].x, liveParticles[i].y, 1, 1, liveParticles[i].color, 5);
-				if(particleType == SELECT_SPARK)
-					drawSparkTrail(&liveParticles[i]);
+				al_draw_rounded_rectangle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].x, liveParticles[i].y, 1, 1, liveParticles[i].color, liveParticles[i].size);
 			}
 			for(int i=0; i<NUM_BUTTONS; i++){
 				buttons[i]->draw();
@@ -210,6 +215,16 @@ void processButtonClick(Button *button, int i){
 		if(particlesPerTick < 0)
 			particlesPerTick = 0;
 		break;
+	case SPARK_TRAIL_UP:
+		sparkliness += 1;
+		if(sparkliness > 25)
+			sparkliness = 25;
+		break;
+	case SPARK_TRAIL_DOWN:
+		sparkliness -= 1;
+		if(sparkliness < 0)
+			sparkliness = 0;
+		break;
 	}
 };
 
@@ -217,10 +232,21 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->age = 0;
 	newParticle->x = mouseX; 
 	newParticle->y = mouseY;
+	newParticle->size = 5;
 	newParticle->vx = ((rand()%100)/100.0 - 0.5)*explosiveness;
 	newParticle->vy = ((rand()%100)/100.0 - 0.5)*explosiveness;
 	newParticle->color = al_map_rgb(rand(), rand(), rand());
 };
+
+void createNewSparkle(struct particle *spark, struct particle *sparkle){
+	sparkle->age = 0;
+	sparkle->x = spark->x + (rand()%10-5); 
+	sparkle->y = spark->y + (rand()%10-5);
+	sparkle->size = 1;
+	sparkle->vx = ((rand()%20)/100.0 - 0.1);
+	sparkle->vy = ((rand()%20)/100.0 - 0.1);
+	sparkle->color = spark->color;
+}
 
 void updateAsBall(struct particle *theParticle){
 	theParticle->x += theParticle->vx;
@@ -285,14 +311,10 @@ void drawText(ALLEGRO_FONT *font24){
 	al_draw_text(font24, al_map_rgb(50,250,50), 245, 75, 0, "+  -");
 	al_draw_textf(font24, al_map_rgb(50,250,50), 15, 105, 0, "Particles Per Tick: %i", particlesPerTick);
 	al_draw_text(font24, al_map_rgb(50,250,50), 230, 105, 0, "+  -");
+	al_draw_textf(font24, al_map_rgb(50,250,50), 15, 135, 0, "Spark Trail: %i (LAGS)", sparkliness);
+	al_draw_text(font24, al_map_rgb(50,250,50), 230, 135, 0, "+  -");
 	al_draw_text(font24, al_map_rgb(50,250,50), width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
 	al_draw_text(font24, al_map_rgb(50,250,50), width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
 	al_draw_text(font24, al_map_rgb(50,250,50), width-40, 75, ALLEGRO_ALIGN_RIGHT, "Frozen");
 	al_draw_rectangle(width-23, (particleType-4)*30 + 21, width-17, (particleType-4)*30 + 28, al_map_rgb(100,100,100), 6);
-};
-
-void drawSparkTrail(struct particle *spark){
-	for(int i=0; i<sparkliness; i++){
-		al_draw_pixel(spark->x-(3*i*spark->vx)+(rand()%10 - 5), spark->y-(3*i*spark->vy)+(rand()%6 - 3), spark->color);
-	}
 };
