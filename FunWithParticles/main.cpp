@@ -4,12 +4,12 @@
 #include <allegro5\allegro_ttf.h>
 
 #include "Button.h"
+#include "ColorGenerator.h"
 
 enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_FROZEN,
 	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN};
 const int NUM_BUTTONS = 14;
 
-const double golden_ratio = 0.618033988749895;
 const int FPS = 60;
 const int maxParticles = 10000;
 const int width = 800;
@@ -37,6 +37,7 @@ int particleType = SELECT_BALL; //i.e. ball, spark, etc.
 int particlesPerTick = 1;
 int sparkliness = 5;
 bool isShowing[NUM_BUTTONS];
+ColorGenerator *colorGen;
 
 int main(void){
 	struct particle liveParticles[maxParticles];
@@ -66,6 +67,8 @@ int main(void){
 	al_init_font_addon();
 	al_init_ttf_addon();
 	
+	colorGen = new ColorGenerator();
+
 	buttons[CO_OF_REST_UP] = new Button(350,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[CO_OF_REST_DOWN] = new Button(385,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[GRAVITY_UP] = new Button(190,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
@@ -103,6 +106,8 @@ int main(void){
 		switch(ev.type){
 		case ALLEGRO_EVENT_TIMER:
 			redraw = true;
+			
+			colorGen->processMouseCoor(mouseX, mouseY, mouseDown);
 
 			for(int i=0; i<NUM_BUTTONS; i++){
 				if(buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown))
@@ -169,7 +174,7 @@ int main(void){
 				if(isShowing[i])
 					buttons[i]->draw();
 			}
-			
+			colorGen->draw();
 			drawText(font24);
 
 			al_flip_display();
@@ -292,7 +297,7 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->size = 5;
 	newParticle->vx = ((rand()%100)/100.0 - 0.5)*explosiveness;
 	newParticle->vy = ((rand()%100)/100.0 - 0.5)*explosiveness;
-	newParticle->color = al_map_rgb(rand(), rand(), rand());
+	newParticle->color = colorGen->getNextColor();
 };
 
 void createNewSparkle(struct particle *spark, struct particle *sparkle){
@@ -336,12 +341,13 @@ void updateAsSpark(struct particle * theParticle){
 		theParticle->vx = 0;
 	}
 
-	theParticle->vx *= 0.95;
+	if(theParticle->vx > 1 || theParticle->vx < -1)
+		theParticle->vx *= 0.95;
 	theParticle->vy *= 0.95;
 
 	theParticle->x += theParticle->vx;
 	theParticle->y += theParticle->vy;
-	theParticle->vy += gravity/FPS * 0.6;
+	theParticle->vy += gravity/FPS * 0.8;
 
 	if(theParticle->x > width || theParticle->x < 0){
 		theParticle->vx *= co_of_restitution;
