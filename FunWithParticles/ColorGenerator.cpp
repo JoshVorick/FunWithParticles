@@ -59,12 +59,18 @@ void ColorGenerator::processMouseCoor(int mouseX, int mouseY, bool isDown){
 }
 
 ALLEGRO_COLOR ColorGenerator::getNextColor(){
-	h += golden_ratio;
-	if(h > 1)
-		h -= 1;
+	h += golden_ratio * (h_max - h_min);
+	if(h > h_max)
+		h -= h_max - h_min;
 	
-	s = (rand() % 100)/(100.0*(s_max - s_min)) + s_min;
-	v = (rand() % 100)/(100.0*(v_max - v_min)) + v_min;
+	s += golden_ratio * (s_max - s_min);
+	if(s > s_max)
+		s -= s_max - s_min;
+	
+	v += golden_ratio * (v_max - v_min);
+	if(v > v_max)
+		v -= v_max - v_min;
+	
 	//Convert H,S,V to R,G,B
 	int h_i = (h*6);
 	float f = h*6 - h_i;
