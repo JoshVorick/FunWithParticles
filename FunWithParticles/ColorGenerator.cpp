@@ -8,9 +8,9 @@ ColorGenerator::ColorGenerator(){
 	h_min = 0;
 	s_min = 0;
 	v_min = 0;
-	h_max = 1;
-	s_max = 1;
-	v_max = 1;
+	h_max = 0.999;
+	s_max = 0.999;
+	v_max = 0.999;
 	hBar_min = new SliderBar(515, 15, 100, al_map_rgb(100,0,0), h_min, h_max, 0);
 	sBar_min = new SliderBar(515, 75, 100, al_map_rgb(0,100,0), s_min, s_max, 0);
 	vBar_min = new SliderBar(515, 135, 100, al_map_rgb(0,0,100), v_min, v_max, 0);
@@ -62,15 +62,12 @@ ALLEGRO_COLOR ColorGenerator::getNextColor(){
 	h += golden_ratio * (h_max - h_min);
 	if(h > h_max)
 		h -= h_max - h_min;
+	if(h_max - h_min == 0)
+		h = h_min;
 	
-	s += golden_ratio * (s_max - s_min);
-	if(s > s_max)
-		s -= s_max - s_min;
-	
-	v += golden_ratio * (v_max - v_min);
-	if(v > v_max)
-		v -= v_max - v_min;
-	
+	s = (rand()%500/500.0)*(s_max-s_min)+s_min;
+	v = (rand()%500/500.0)*(v_max-v_min)+v_min;
+
 	//Convert H,S,V to R,G,B
 	int h_i = (h*6);
 	float f = h*6 - h_i;

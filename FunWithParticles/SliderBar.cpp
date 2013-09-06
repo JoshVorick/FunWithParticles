@@ -31,8 +31,8 @@ bool SliderBar::processMouseCoor(int mouseX, int mouseY, bool isDown){
 		sliderX = (mouseX-x)/(float)width;
 		if(sliderX < 0)
 			sliderX = 0;
-		else if(sliderX > 1)
-			sliderX = 1;
+		else if(sliderX >= 1)
+			sliderX = 0.999;
 	}
 	return isHeld;
 }
