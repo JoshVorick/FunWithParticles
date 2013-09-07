@@ -180,7 +180,10 @@ int main(void){
 		}
 		if(redraw && al_is_event_queue_empty(event_queue)){
 			redraw = false;
-			for(int i=0; i<maxParticles; i++){
+			for(int i=curParticle; i<maxParticles; i++){
+				al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+			}
+			for(int i=0; i<curParticle; i++){
 				al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
 			}
 			for(int i=0; i<NUM_BUTTONS; i++){
