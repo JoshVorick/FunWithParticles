@@ -7,8 +7,8 @@
 #include "ColorGenerator.h"
 
 enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES, SELECT_FROZEN,
-	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN};
-const int NUM_BUTTONS = 15;
+	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE};
+const int NUM_BUTTONS = 17;
 
 const int FPS = 120;
 const int maxParticles = 10000;
@@ -34,10 +34,14 @@ float explosiveness = 15;
 int mouseX = 0;
 int mouseY = 0;
 int particleType = SELECT_BALL; //i.e. ball, spark, etc.
+int particleShape = SELECT_SHAPE_CIRCLE;
 int particlesPerTick = 1;
 int sparkliness = 5;
+int radius = 8;
 bool isShowing[NUM_BUTTONS];
+bool showButtons = true;
 ColorGenerator *colorGen;
+bool showColors = true;
 
 int main(void){
 	struct particle liveParticles[maxParticles];
@@ -46,6 +50,7 @@ int main(void){
 	bool mouseDown = false;
 	bool done = false;
 	bool redraw = true;
+	bool start = false;
 	Button *buttons[NUM_BUTTONS];
 
 	ALLEGRO_DISPLAY *display;
@@ -93,6 +98,8 @@ int main(void){
 	buttons[PART_PER_TICK_DOWN] = new Button(260,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SPARK_TRAIL_UP] = new Button(225,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SPARK_TRAIL_DOWN] = new Button(260,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 
 	for(int i=0; i<NUM_BUTTONS; i++)
 		isShowing[i] = true;
@@ -108,6 +115,36 @@ int main(void){
 	al_register_event_source(event_queue, al_get_mouse_event_source());
 
 	al_start_timer(timer);
+	
+	while(!start){
+		ALLEGRO_EVENT ev;
+		al_wait_for_event(event_queue, &ev);
+
+		switch(ev.type){
+		case ALLEGRO_EVENT_TIMER:
+			redraw = true;
+			break;
+		case ALLEGRO_EVENT_KEY_DOWN:
+			if(ev.keyboard.keycode == ALLEGRO_KEY_SPACE){
+				start = true;
+				break;
+			}
+			else if(ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
+				start = true;
+				done = true;
+			}
+		case ALLEGRO_EVENT_DISPLAY_CLOSE:
+			start = true;
+			done = true;
+			break;
+		}
+		if(redraw && al_is_event_queue_empty(event_queue)){
+			al_draw_text(font24, al_map_rgb(50,250,250), width/2, height/2, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
+			al_draw_text(font24, al_map_rgb(50,250,250), width/2, height/2 + 30, ALLEGRO_ALIGN_CENTRE, "Press space to continue.");
+			al_flip_display();
+			al_clear_to_color(al_map_rgb(0,0,0));
+		}
+	}
 
 	while(!done){
 		ALLEGRO_EVENT ev;
@@ -117,13 +154,15 @@ int main(void){
 		case ALLEGRO_EVENT_TIMER:
 			redraw = true;
 			
-			colorGen->processMouseCoor(mouseX, mouseY, mouseDown);
+			if(showColors)
+				colorGen->processMouseCoor(mouseX, mouseY, mouseDown);
 
-			for(int i=0; i<NUM_BUTTONS; i++){
-				if(buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown))
-					if(buttons[i]->isBeingHeld())
-						processButtonClick(buttons[i], i);
-			}
+			if(showButtons)
+				for(int i=0; i<NUM_BUTTONS; i++){
+					if(buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown))
+						if(buttons[i]->isBeingHeld())
+							processButtonClick(buttons[i], i);
+				}
 			
 			if(mouseDown){
 				for(int i=0; i<particlesPerTick; i++){
@@ -172,6 +211,41 @@ int main(void){
 				buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown);
 			}
 			break;
+		case ALLEGRO_EVENT_KEY_DOWN:
+			switch(ev.keyboard.keycode){
+			case ALLEGRO_KEY_ESCAPE:
+				done = true;
+				break;
+			case ALLEGRO_KEY_B:
+				if(showButtons){
+					showButtons = false;
+					processButtonClick(buttons[particleType], particleType);
+				}else{
+					for(int i=0; i<NUM_BUTTONS; i++)
+						isShowing[i] = true;
+					showButtons = true;
+				}
+				break;
+			case ALLEGRO_KEY_C:
+				showColors = !showColors;
+				break;
+			case ALLEGRO_KEY_1:
+				processButtonClick(buttons[SELECT_BALL], SELECT_BALL);
+				break;
+			case ALLEGRO_KEY_2:
+				processButtonClick(buttons[SELECT_SPARK], SELECT_SPARK);
+				break;
+			case ALLEGRO_KEY_3:
+				processButtonClick(buttons[SELECT_FIZZLE], SELECT_FIZZLE);
+				break;
+			case ALLEGRO_KEY_4:
+				processButtonClick(buttons[SELECT_CIRCLES], SELECT_CIRCLES);
+				break;
+			case ALLEGRO_KEY_5:
+				processButtonClick(buttons[SELECT_FROZEN], SELECT_FROZEN);
+				break;
+			}
+			break;
 		case ALLEGRO_EVENT_DISPLAY_RESIZE:
 			break;
 		case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -180,23 +254,46 @@ int main(void){
 		}
 		if(redraw && al_is_event_queue_empty(event_queue)){
 			redraw = false;
-			for(int i=curParticle; i<maxParticles; i++){
-				al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+			if(particleShape == SELECT_SHAPE_CIRCLE){
+				for(int i=curParticle; i<maxParticles; i++){
+					al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+				}
+				for(int i=0; i<curParticle; i++){
+					al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+				}
 			}
-			for(int i=0; i<curParticle; i++){
-				al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+			if(particleShape == SELECT_SHAPE_SQUARE){
+				for(int i=curParticle; i<maxParticles; i++){
+					al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
+						liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
+				}
+				for(int i=0; i<curParticle; i++){
+					al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
+						liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
+				}
 			}
-			for(int i=0; i<NUM_BUTTONS; i++){
-				if(isShowing[i])
-					buttons[i]->draw();
-			}
-			colorGen->draw();
-			drawText(font24);
+			if(showButtons)
+				for(int i=0; i<NUM_BUTTONS; i++){
+					if(isShowing[i])
+						buttons[i]->draw();
+				}
+
+			if(showColors)
+				colorGen->draw();
+			if(showButtons)
+				drawText(font24);
 
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
 		}
 	}
+
+	al_destroy_timer(timer);
+	al_destroy_font(font24);
+	al_destroy_display(display);
+	al_destroy_event_queue(event_queue);
+
+	return 0;
 }
 
 void processButtonClick(Button *button, int i){
@@ -316,6 +413,12 @@ void processButtonClick(Button *button, int i){
 		if(sparkliness > 25)
 			sparkliness = 25;
 		break;
+	case SELECT_SHAPE_CIRCLE:
+		particleShape = SELECT_SHAPE_CIRCLE;
+		break;
+	case SELECT_SHAPE_SQUARE:
+		particleShape = SELECT_SHAPE_SQUARE;
+		break;
 	}
 };
 
@@ -323,7 +426,7 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->age = 0;
 	newParticle->x = mouseX; 
 	newParticle->y = mouseY;
-	newParticle->size = 5;
+	newParticle->size = radius;
 	newParticle->vx = ((rand()%100)/100.0 - 0.5)*explosiveness;
 	newParticle->vy = ((rand()%100)/100.0 - 0.5)*explosiveness;
 	newParticle->color = colorGen->getNextColor();
@@ -416,6 +519,9 @@ void drawText(ALLEGRO_FONT *font24){
 		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 75, ALLEGRO_ALIGN_RIGHT, "Fizzle");
 		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 105, ALLEGRO_ALIGN_RIGHT, "Circles");
 		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 135, ALLEGRO_ALIGN_RIGHT, "Frozen");
+		al_draw_text(font24, al_map_rgb(50,250,50), width-40, height-25, ALLEGRO_ALIGN_RIGHT, "Square");
+		al_draw_text(font24, al_map_rgb(50,250,50), width-40, height-55, ALLEGRO_ALIGN_RIGHT, "Circle");
 	}
-	al_draw_rectangle(width-23, (particleType-4)*30 + 21, width-17, (particleType-4)*30 + 28, al_map_rgb(100,100,100), 6);
+	al_draw_rectangle(width-24, (particleType-4)*30 + 20, width-16, (particleType-4)*30 + 29, al_map_rgb(200,0,100), 8);
+	al_draw_rectangle(width-24, (particleShape-15)*30 + height-51, width-16, (particleShape-15)*30 + height-42, al_map_rgb(200,0,100), 8);
 };
