@@ -51,6 +51,7 @@ int main(void){
 	bool done = false;
 	bool redraw = true;
 	bool start = false;
+	bool isUsingButton;
 	Button *buttons[NUM_BUTTONS];
 
 	ALLEGRO_DISPLAY *display;
@@ -128,19 +129,19 @@ int main(void){
 			if(ev.keyboard.keycode == ALLEGRO_KEY_SPACE){
 				start = true;
 				break;
-			}
-			else if(ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
+			}else if(ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
 				start = true;
 				done = true;
-			}
+			}/*
 		case ALLEGRO_EVENT_DISPLAY_CLOSE:
 			start = true;
 			done = true;
-			break;
+			break;*/
 		}
 		if(redraw && al_is_event_queue_empty(event_queue)){
-			al_draw_text(font24, al_map_rgb(50,250,250), width/2, height/2, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
-			al_draw_text(font24, al_map_rgb(50,250,250), width/2, height/2 + 30, ALLEGRO_ALIGN_CENTRE, "Press space to continue.");
+			al_draw_text(font24, al_map_rgb(50,250,250), width/2, height/2 - 60, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
+			al_draw_text(font24, al_map_rgb(250,50,250), width/2, height/2 - 30, ALLEGRO_ALIGN_CENTRE, "Press escape to exit.");
+			al_draw_text(font24, al_map_rgb(250,250,50), width/2, height/2 + 30, ALLEGRO_ALIGN_CENTRE, "Press space to continue.");
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
 		}
@@ -153,18 +154,21 @@ int main(void){
 		switch(ev.type){
 		case ALLEGRO_EVENT_TIMER:
 			redraw = true;
-			
+			isUsingButton = false;
+
 			if(showColors)
 				colorGen->processMouseCoor(mouseX, mouseY, mouseDown);
 
 			if(showButtons)
 				for(int i=0; i<NUM_BUTTONS; i++){
-					if(buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown))
+					if(buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
 						if(buttons[i]->isBeingHeld())
 							processButtonClick(buttons[i], i);
+						isUsingButton = true;
+					}
 				}
 			
-			if(mouseDown){
+			if(mouseDown && !isUsingButton){
 				for(int i=0; i<particlesPerTick; i++){
 					createNewParticle(&liveParticles[curParticle]);
 					curParticle = (curParticle+1) % maxParticles;
@@ -198,12 +202,17 @@ int main(void){
 			break;
 		case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
 			mouseDown = true;
+			isUsingButton = false;
 			for(int i=0; i<NUM_BUTTONS; i++){
-				if(isShowing[i] && buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown))
+				if(isShowing[i] && buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
 					processButtonClick(buttons[i], i);
+					isUsingButton = true;
+				}
 			}
-			createNewParticle(&liveParticles[curParticle]);
-			curParticle = (curParticle+1) % maxParticles;
+			if(!isUsingButton){
+				createNewParticle(&liveParticles[curParticle]);
+				curParticle = (curParticle+1) % maxParticles;
+			}
 			break;
 		case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
 			mouseDown = false;
