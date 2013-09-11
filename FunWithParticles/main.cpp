@@ -77,7 +77,7 @@ int main(void){
 	al_init_font_addon();
 	al_init_ttf_addon();
 	
-	colorGen = new ColorGenerator();
+	colorGen = new ColorGenerator(515,0);
 
 	for(int i=0; i<maxParticles; i++){
 		liveParticles[i].age=0;
@@ -187,27 +187,29 @@ int main(void){
 					curParticle = (curParticle+1) % maxParticles;
 				}
 			}
-			for(int i=0;i<maxParticles;i++){
-				if(isBlackHole){
-					processBlackHoleGravity(&liveParticles[i], &blackHole);
-				}
-
-				if(particleType == SELECT_BALL)
-					updateAsBall(&liveParticles[i]);
-				else if(particleType == SELECT_CIRCLES){
-					updateAsBall(&liveParticles[i]);
-					liveParticles[i].size = height - liveParticles[i].y;
-				}else if(particleType == SELECT_SPARK){
-					updateAsSpark(&liveParticles[i]);
-					if(liveParticles[i].size == 5 && curSparkle == 0){
-						createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
-						curParticle = (curParticle+1) % maxParticles;
+			if(particleType != SELECT_FROZEN){
+				for(int i=0;i<maxParticles;i++){
+					if(isBlackHole){
+						processBlackHoleGravity(&liveParticles[i], &blackHole);
 					}
-				}else if(particleType == SELECT_FIZZLE){
-					updateAsSpark(&liveParticles[i]);
-					if(i % sparkliness == 0){
-						createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
-						curParticle = (curParticle+1) % maxParticles;
+
+					if(particleType == SELECT_BALL)
+						updateAsBall(&liveParticles[i]);
+					else if(particleType == SELECT_CIRCLES){
+						updateAsBall(&liveParticles[i]);
+						liveParticles[i].size = height - liveParticles[i].y;
+					}else if(particleType == SELECT_SPARK){
+						updateAsSpark(&liveParticles[i]);
+						if(liveParticles[i].size == 5 && curSparkle == 0){
+							createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
+							curParticle = (curParticle+1) % maxParticles;
+						}
+					}else if(particleType == SELECT_FIZZLE){
+						updateAsSpark(&liveParticles[i]);
+						if(i % sparkliness == 0){
+							createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
+							curParticle = (curParticle+1) % maxParticles;
+						}
 					}
 				}
 			}
@@ -476,19 +478,19 @@ void updateAsBall(struct particle *theParticle){
 	theParticle->y += theParticle->vy;
 	theParticle->vy += gravity/FPS;
 	
-	if(theParticle->x+theParticle->size > width || theParticle->x-theParticle->size < 0){
+	if(theParticle->x > width || theParticle->x < 0){
 		theParticle->vx *= co_of_restitution;
-		if(theParticle->x-theParticle->size < 0)
-			theParticle->x = theParticle->size;
+		if(theParticle->x < 0)
+			theParticle->x = 0;
 		else
-			theParticle->x = width-theParticle->size;
+			theParticle->x = width;
 	}
-	if(theParticle->y+theParticle->size > height || theParticle->y-theParticle->size < 0){
+	if(theParticle->y > height || theParticle->y < 0){
 		theParticle->vy *= co_of_restitution;
-		if(theParticle->y-theParticle->size < 0)
-			theParticle->y = theParticle->size;
+		if(theParticle->y < 0)
+			theParticle->y = 0;
 		else
-			theParticle->y = height-theParticle->size;
+			theParticle->y = height;
 	}
 };
 
@@ -497,9 +499,11 @@ void updateAsSpark(struct particle * theParticle){
 	al_unmap_rgb(theParticle->color, &r, &g, &b);
 	theParticle->color = al_map_rgba(r*(1000-theParticle->age)/1000,g*(1000-theParticle->age)/1000,b*(1000-theParticle->age)/1000, theParticle->age+50);
 	theParticle->age++;
-	if(theParticle->age > 600){
+	if(theParticle->age > 50){
 		theParticle->x = -10;
 		theParticle->vx = 0;
+		theParticle->y = -10;
+		theParticle->vy = 0;
 	}
 
 	if(theParticle->vx > 1 || theParticle->vx < -1)

@@ -2,6 +2,8 @@
 #include "ColorGenerator.h"
 
 ColorGenerator::ColorGenerator(){
+	x=0;
+	y=0;
 	h=0;
 	s=0.9;
 	v=0.9;
@@ -11,12 +13,32 @@ ColorGenerator::ColorGenerator(){
 	h_max = 0.999;
 	s_max = 0.999;
 	v_max = 0.999;
-	hBar_min = new SliderBar(515, 15, 100, al_map_rgb(100,0,0), h_min, h_max, 0);
-	sBar_min = new SliderBar(515, 75, 100, al_map_rgb(0,100,0), s_min, s_max, 0);
-	vBar_min = new SliderBar(515, 135, 100, al_map_rgb(0,0,100), v_min, v_max, 0);
-	hBar_max = new SliderBar(515, 45, 100, al_map_rgb(100,0,0), h_min, h_max, 1);
-	sBar_max = new SliderBar(515, 105, 100, al_map_rgb(0,100,0), s_min, s_max, 1);
-	vBar_max = new SliderBar(515, 165, 100, al_map_rgb(0,0,100), v_min, v_max, 1);
+	hBar_min = new SliderBar(x, y+10, 100, al_map_rgb(100,0,0), h_min, h_max, 0);
+	sBar_min = new SliderBar(x, y+50, 100, al_map_rgb(0,100,0), s_min, s_max, 0);
+	vBar_min = new SliderBar(x, y+90, 100, al_map_rgb(0,0,100), v_min, v_max, 0);
+	hBar_max = new SliderBar(x, y+20, 100, al_map_rgb(100,0,0), h_min, h_max, 1);
+	sBar_max = new SliderBar(x, y+60, 100, al_map_rgb(0,100,0), s_min, s_max, 1);
+	vBar_max = new SliderBar(x, y+100, 100, al_map_rgb(0,0,100), v_min, v_max, 1);
+}
+
+ColorGenerator::ColorGenerator(int x, int y){
+	this->x = x;
+	this->y = y;
+	h=0;
+	s=0.9;
+	v=0.9;
+	h_min = 0;
+	s_min = 0;
+	v_min = 0;
+	h_max = 0.999;
+	s_max = 0.999;
+	v_max = 0.999;
+	hBar_min = new SliderBar(x, y+10, 100, al_map_rgb(100,0,0), h_min, h_max, 0);
+	sBar_min = new SliderBar(x, y+50, 100, al_map_rgb(0,100,0), s_min, s_max, 0);
+	vBar_min = new SliderBar(x, y+90, 100, al_map_rgb(0,0,100), v_min, v_max, 0);
+	hBar_max = new SliderBar(x, y+20, 100, al_map_rgb(100,0,0), h_min, h_max, 1);
+	sBar_max = new SliderBar(x, y+60, 100, al_map_rgb(0,100,0), s_min, s_max, 1);
+	vBar_max = new SliderBar(x, y+100, 100, al_map_rgb(0,0,100), v_min, v_max, 1);
 }
 
 void ColorGenerator::processMouseCoor(int mouseX, int mouseY, bool isDown){
@@ -68,53 +90,62 @@ ALLEGRO_COLOR ColorGenerator::getNextColor(){
 	s = (rand()%500/500.0)*(s_max-s_min)+s_min;
 	v = (rand()%500/500.0)*(v_max-v_min)+v_min;
 
-	//Convert H,S,V to R,G,B
-	int h_i = (h*6);
-	float f = h*6 - h_i;
-	float p = v*(1-s);
-	float q = v*(1-f*s);
-	float t = v*(1-(1-f)*s);
-	float r, g, b;
-	switch(h_i){
-	case 0:
-		r=v;
-		g=t;
-		b=p;
-		break;
-	case 1:
-		r=q;
-		g=v;
-		b=p;
-		break;
-	case 2:
-		r=p;
-		g=v;
-		b=t;
-		break;
-	case 3:
-		r=p;
-		g=q;
-		b=v;
-		break;
-	case 4:
-		r=t;
-		g=p;
-		b=v;
-		break;
-	case 5:
-		r=v;
-		g=p;
-		b=q;
-		break;
-	}
-	return al_map_rgb((int)(r*256), (int)(g*256), (int)(b*256));
+	return map_hsv(h,s,v);
 }
 
 void ColorGenerator::draw(){
+	for(float i=0; i<1; i+=0.01)
+		al_draw_rectangle(x + i*100, y+10, x + i*100, y+20, map_hsv(i,0.999,0.999), 1);
+
 	hBar_min->draw();
 	sBar_min->draw();
 	vBar_min->draw();
 	hBar_max->draw();
 	sBar_max->draw();
 	vBar_max->draw();
+}
+	
+ALLEGRO_COLOR ColorGenerator::map_hsv(float hue, float sat, float var){
+	
+	//Convert H,S,V to R,G,B
+	int h_i = (hue*6);
+	float f = hue*6 - h_i;
+	float p = var*(1-sat);
+	float q = var*(1-f*sat);
+	float t = var*(1-(1-f)*sat);
+	float r, g, b;
+	switch(h_i){
+	case 0:
+		r=var;
+		g=t;
+		b=p;
+		break;
+	case 1:
+		r=q;
+		g=var;
+		b=p;
+		break;
+	case 2:
+		r=p;
+		g=var;
+		b=t;
+		break;
+	case 3:
+		r=p;
+		g=q;
+		b=var;
+		break;
+	case 4:
+		r=t;
+		g=p;
+		b=var;
+		break;
+	case 5:
+		r=var;
+		g=p;
+		b=q;
+		break;
+	}	
+
+	return al_map_rgb((int)(r*256), (int)(g*256), (int)(b*256));
 }
