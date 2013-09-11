@@ -170,7 +170,8 @@ int main(void){
 			isUsingButton = false;
 
 			if(showColors)
-				colorGen->processMouseCoor(mouseX, mouseY, mouseDown);
+				if(colorGen->processMouseCoor(mouseX, mouseY, mouseDown))
+					isUsingButton = true;
 
 			if(showButtons)
 				for(int i=0; i<NUM_BUTTONS; i++){
@@ -222,6 +223,11 @@ int main(void){
 		case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
 			mouseDown = true;
 			isUsingButton = false;
+
+			if(showColors)
+				if(colorGen->processMouseCoor(mouseX, mouseY, mouseDown))
+					isUsingButton = true;
+
 			for(int i=0; i<NUM_BUTTONS; i++){
 				if(isShowing[i] && buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
 					processButtonClick(buttons[i], i);

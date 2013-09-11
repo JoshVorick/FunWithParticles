@@ -41,43 +41,51 @@ ColorGenerator::ColorGenerator(int x, int y){
 	vBar_max = new SliderBar(x, y+100, 100, al_map_rgb(0,0,100), v_min, v_max, 1);
 }
 
-void ColorGenerator::processMouseCoor(int mouseX, int mouseY, bool isDown){
+bool ColorGenerator::processMouseCoor(int mouseX, int mouseY, bool isDown){
+	bool isUsingSlider = false;
 	if(hBar_min->processMouseCoor(mouseX, mouseY, isDown)){
 		if(hBar_min->getLocation() > h_max)
 			hBar_min->setLocation(h_max);
 		h_min = hBar_min->getLocation();
 		hBar_max->setMin(h_min);
+		isUsingSlider = true;
 	}
 	else if(hBar_max->processMouseCoor(mouseX, mouseY, isDown)){
 		if(hBar_max->getLocation() < h_min)
 			hBar_max->setLocation(h_min);
 		h_max = hBar_max->getLocation();
 		hBar_min->setMax(h_max);
+		isUsingSlider = true;
 	}
 	else if(sBar_min->processMouseCoor(mouseX, mouseY, isDown)){
 		if(sBar_min->getLocation() > s_max)
 			sBar_min->setLocation(s_max);
 		s_min = sBar_min->getLocation();
 		sBar_max->setMin(s_min);
+		isUsingSlider = true;
 	}
 	else if(sBar_max->processMouseCoor(mouseX, mouseY, isDown)){
 		if(sBar_max->getLocation() < s_min)
 			sBar_max->setLocation(s_min);
 		s_max = sBar_max->getLocation();
 		sBar_min->setMax(s_max);
+		isUsingSlider = true;
 	}
 	else if(vBar_min->processMouseCoor(mouseX, mouseY, isDown)){
 		if(vBar_min->getLocation() > v_max)
 			vBar_min->setLocation(v_max);
 		v_min = vBar_min->getLocation();
 		vBar_max->setMin(v_min);
+		isUsingSlider = true;
 	}
 	else if(vBar_max->processMouseCoor(mouseX, mouseY, isDown)){
 		if(vBar_max->getLocation() < v_min)
 			vBar_max->setLocation(v_min);
 		v_max = vBar_max->getLocation();
 		vBar_min->setMax(v_max);
+		isUsingSlider = true;
 	}
+	return isUsingSlider;
 }
 
 ALLEGRO_COLOR ColorGenerator::getNextColor(){
@@ -94,8 +102,16 @@ ALLEGRO_COLOR ColorGenerator::getNextColor(){
 }
 
 void ColorGenerator::draw(){
+	float h = (h_max-h_min)/2 + h_min; //Create new ones to keep from messing up g_ratio algorithm
+	float s = (s_max-s_min)/2 + s_min;
+	float v = (v_max-v_min)/2 + v_min;
 	for(float i=0; i<1; i+=0.01)
-		al_draw_rectangle(x + i*100, y+10, x + i*100, y+20, map_hsv(i,0.999,0.999), 1);
+		al_draw_rectangle(x + i*100, y+10, x + i*100, y+20, map_hsv(i,s,v), 1);
+	for(float i=0; i<1; i+=0.01)
+		al_draw_rectangle(x + i*100, y+50, x + i*100, y+60, map_hsv(h,i,v), 1);
+	for(float i=0; i<1; i+=0.01)
+		al_draw_rectangle(x + i*100, y+90, x + i*100, y+100, map_hsv(h,s,i), 1);
+
 
 	hBar_min->draw();
 	sBar_min->draw();

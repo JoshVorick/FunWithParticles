@@ -17,7 +17,7 @@ public:
 	ColorGenerator();
 	ColorGenerator(int x, int y);
 
-	void processMouseCoor(int mouseX, int mouseY, bool isDown);
+	bool processMouseCoor(int mouseX, int mouseY, bool isDown); //returns true if being used
 	ALLEGRO_COLOR getNextColor();
 	void draw();
 };
