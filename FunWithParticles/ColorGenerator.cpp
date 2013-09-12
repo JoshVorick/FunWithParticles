@@ -19,6 +19,7 @@ ColorGenerator::ColorGenerator(){
 	hBar_max = new SliderBar(x, y+20, 100, al_map_rgb(100,0,0), h_min, h_max, 1);
 	sBar_max = new SliderBar(x, y+60, 100, al_map_rgb(0,100,0), s_min, s_max, 1);
 	vBar_max = new SliderBar(x, y+100, 100, al_map_rgb(0,0,100), v_min, v_max, 1);
+	font18 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 18, 0);
 }
 
 ColorGenerator::ColorGenerator(int x, int y){
@@ -39,6 +40,7 @@ ColorGenerator::ColorGenerator(int x, int y){
 	hBar_max = new SliderBar(x, y+20, 100, al_map_rgb(100,0,0), h_min, h_max, 1);
 	sBar_max = new SliderBar(x, y+60, 100, al_map_rgb(0,100,0), s_min, s_max, 1);
 	vBar_max = new SliderBar(x, y+100, 100, al_map_rgb(0,0,100), v_min, v_max, 1);
+	font18 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 18, 0);
 }
 
 bool ColorGenerator::processMouseCoor(int mouseX, int mouseY, bool isDown){
@@ -111,7 +113,10 @@ void ColorGenerator::draw(){
 		al_draw_rectangle(x + i*100, y+50, x + i*100, y+60, map_hsv(h,i,v), 1);
 	for(float i=0; i<1; i+=0.01)
 		al_draw_rectangle(x + i*100, y+90, x + i*100, y+100, map_hsv(h,s,i), 1);
-
+	
+	al_draw_text(font18,al_map_rgb(255,100,100),x-5,y+5,ALLEGRO_ALIGN_RIGHT, "Hue:");
+	al_draw_text(font18,al_map_rgb(100,255,100),x-5,y+45,ALLEGRO_ALIGN_RIGHT, "Saturation:");
+	al_draw_text(font18,al_map_rgb(100,100,255),x-5,y+85,ALLEGRO_ALIGN_RIGHT, "Variance:");
 
 	hBar_min->draw();
 	sBar_min->draw();

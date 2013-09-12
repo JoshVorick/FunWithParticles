@@ -1,6 +1,8 @@
 #pragma once
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5\allegro_font.h>
+#include <allegro5\allegro_ttf.h>
 
 #include "SliderBar.h"
 
@@ -11,6 +13,8 @@ private:
 	int x, y;
 	float h,s,v,h_min,h_max,s_min,s_max,v_min,v_max;
 	SliderBar *hBar_min, *hBar_max, *sBar_min, *sBar_max, *vBar_min, *vBar_max;
+	ALLEGRO_FONT *font18;
+
 	ALLEGRO_COLOR map_hsv(float hue, float sat, float var);
 
 public:

@@ -56,12 +56,14 @@ int main(void){
 	bool redraw = true;
 	bool start = false;
 	bool isUsingButton;
+	bool saveNewBackground = false;
 	Button *buttons[NUM_BUTTONS];
 
 	ALLEGRO_DISPLAY *display;
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER *timer;
 	ALLEGRO_FONT *font24;
+	ALLEGRO_BITMAP *background;
 
 	al_init();
 
@@ -122,7 +124,11 @@ int main(void){
 	font24 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 24, 0);
 	event_queue = al_create_event_queue();
 	timer = al_create_timer(1.0/FPS);
-	
+	background = al_create_bitmap(width, height);
+	al_set_target_bitmap(background);
+	al_clear_to_color(al_map_rgb(10,10,10));
+	al_set_target_bitmap(al_get_backbuffer(display));
+
 	al_register_event_source(event_queue, al_get_keyboard_event_source());
 	al_register_event_source(event_queue, al_get_timer_event_source(timer));
 	al_register_event_source(event_queue, al_get_display_event_source(display));
@@ -278,6 +284,9 @@ int main(void){
 			case ALLEGRO_KEY_5:
 				processButtonClick(buttons[SELECT_FROZEN], SELECT_FROZEN);
 				break;
+			case ALLEGRO_KEY_S:
+				saveNewBackground = true;;
+				break;
 			}
 			break;
 		case ALLEGRO_EVENT_DISPLAY_RESIZE:
@@ -288,7 +297,13 @@ int main(void){
 		}
 		if(redraw && al_is_event_queue_empty(event_queue)){
 			redraw = false;
+			al_draw_bitmap(background, 0, 0, 0);
 
+			if(saveNewBackground){
+				al_set_target_bitmap(background);
+				al_clear_to_color(al_map_rgb(0,0,0));
+			}
+			
 			if(isBlackHole)
 				al_draw_filled_circle(blackHole.x, blackHole.y, blackHole.size, al_map_rgb(30, 10, 30));
 			if(particleShape == SELECT_SHAPE_CIRCLE){
@@ -308,6 +323,10 @@ int main(void){
 					al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
 						liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
 				}
+			}			
+			if(saveNewBackground){
+				al_set_target_bitmap(al_get_backbuffer(display));
+				saveNewBackground = false;
 			}
 			if(showButtons)
 				for(int i=0; i<NUM_BUTTONS; i++){
