@@ -38,6 +38,6 @@ bool SliderBar::processMouseCoor(int mouseX, int mouseY, bool isDown){
 }
 
 void SliderBar::draw(){
-	al_draw_rectangle(x,y,x+width,y,myColor,3);
+	al_draw_rectangle(x, y, x+width, y, myColor, 3);
 	al_draw_filled_circle(x+(width*sliderX), y, 5, myColor);
 }

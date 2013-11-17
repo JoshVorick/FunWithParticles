@@ -12,8 +12,8 @@ enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BA
 const int NUM_BUTTONS = 18;
 
 const int FPS = 120;
-const int maxParticles = 10000;
-const int maxBlackHoles = 3;
+const int maxParticles = 3000;
+const int maxBlackHoles = 4;
 const int width = 800;
 const int height = 800;
 
@@ -23,7 +23,7 @@ void createNewSparkle(struct particle *spark, struct particle *sparkle);
 void updateAsBall(struct particle *theParticle);
 void updateAsSpark(struct particle *theParticle);
 void processBlackHoleGravity(struct particle *theParticle, struct particle *theBlackHole);
-void drawText(ALLEGRO_FONT *font24);
+void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color);
 
 struct particle{
 	ALLEGRO_COLOR color;
@@ -41,7 +41,7 @@ int particleType = SELECT_BALL; //i.e. ball, spark, etc.
 int particleShape = SELECT_SHAPE_CIRCLE;
 int particlesPerTick = 1;
 int sparkliness = 5;
-int radius = 8;
+int radius = 5;
 bool isShowing[NUM_BUTTONS];
 bool showButtons = true;
 ColorGenerator *colorGen;
@@ -65,6 +65,7 @@ int main(void){
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER *timer;
 	ALLEGRO_FONT *font24;
+	ALLEGRO_COLOR limegreen;
 	ALLEGRO_BITMAP *background;
 
 	al_init();
@@ -80,8 +81,6 @@ int main(void){
 	al_init_primitives_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
-	
-	colorGen = new ColorGenerator(515,0);
 
 	for(int i=0; i<maxParticles; i++){
 		liveParticles[i].age=0;
@@ -126,6 +125,7 @@ int main(void){
 	processButtonClick(buttons[SELECT_BALL], SELECT_BALL);
 	
 	font24 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 24, 0);
+	limegreen = al_map_rgb(50,250,50);
 	event_queue = al_create_event_queue();
 	timer = al_create_timer(1.0/FPS);
 	background = al_create_bitmap(width, height);
@@ -137,6 +137,8 @@ int main(void){
 	al_register_event_source(event_queue, al_get_timer_event_source(timer));
 	al_register_event_source(event_queue, al_get_display_event_source(display));
 	al_register_event_source(event_queue, al_get_mouse_event_source());
+	
+	colorGen = new ColorGenerator(515,0, al_map_rgb(250,250,250));
 
 	al_start_timer(timer);
 	
@@ -192,7 +194,7 @@ int main(void){
 					}
 				}
 			
-			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE){
+			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE && mouseY>=0){
 				for(int i=0; i<particlesPerTick; i++){
 					createNewParticle(&liveParticles[curParticle]);
 					curParticle = (curParticle+1) % maxParticles;
@@ -212,7 +214,7 @@ int main(void){
 							liveParticles[i].size = height - liveParticles[i].y;
 						}else if(particleType == SELECT_SPARK){
 							updateAsSpark(&liveParticles[i]);
-							if(liveParticles[i].size == 5 && curSparkle == 0){
+							if(liveParticles[i].size == radius && curSparkle == 0){
 								createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
 								curParticle = (curParticle+1) % maxParticles;
 							}
@@ -354,7 +356,7 @@ int main(void){
 			if(showColors)
 				colorGen->draw();
 			if(showButtons)
-				drawText(font24);
+				drawText(font24, limegreen);
 
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
@@ -373,8 +375,8 @@ void processButtonClick(Button *button, int i){
 	switch(i){
 	case CO_OF_REST_UP:
 		co_of_restitution -= 0.05;
-		if(co_of_restitution < -1)
-			co_of_restitution = -1;
+		if(co_of_restitution < -0.99)
+			co_of_restitution = -0.99;
 		break;
 	case CO_OF_REST_DOWN:
 		co_of_restitution += 0.05;
@@ -513,8 +515,8 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->x = mouseX; 
 	newParticle->y = mouseY;
 	newParticle->size = radius;
-	newParticle->vx = ((rand()%100)/100.0 - 0.5)*explosiveness;
-	newParticle->vy = ((rand()%100)/100.0 - 0.5)*explosiveness;
+	newParticle->vx = ((rand()%FPS)/(float)FPS - 0.5)*explosiveness;
+	newParticle->vy = ((rand()%FPS)/(float)FPS - 0.5)*explosiveness;
 	newParticle->color = colorGen->getNextColor();
 	newParticle->alive = true;
 };
@@ -524,8 +526,8 @@ void createNewSparkle(struct particle *spark, struct particle *sparkle){
 	sparkle->x = spark->x + (rand()%4 - 2); 
 	sparkle->y = spark->y + (rand()%4 - 2);
 	sparkle->size = 2;
-	sparkle->vx = ((rand()%600)/1000.0 - 0.3);
-	sparkle->vy = ((rand()%600)/1000.0 - 0.3);
+	sparkle->vx = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
+	sparkle->vy = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
 	sparkle->color = spark->color;
 	sparkle->alive = true;
 };
@@ -535,26 +537,23 @@ void updateAsBall(struct particle *theParticle){
 	theParticle->y += theParticle->vy;
 	theParticle->vy += gravity/FPS;
 	
-	if(theParticle->x > width || theParticle->x < 0){
+	if(theParticle->x + radius > width || theParticle->x - radius < 0){
 		theParticle->vx *= co_of_restitution;
-		if(theParticle->x < 0)
-			theParticle->x = 0;
+		if(theParticle->x < radius)
+			theParticle->x = radius;
 		else
-			theParticle->x = width;
+			theParticle->x = width - radius;
 	}
-	if(theParticle->y > height || theParticle->y < 0){
+	if(theParticle->y + radius > height){
 		theParticle->vy *= co_of_restitution;
-		if(theParticle->y < 0)
-			theParticle->y = 0;
-		else
-			theParticle->y = height;
+		theParticle->y = height - radius;
 	}
 };
 
 void updateAsSpark(struct particle * theParticle){
 	unsigned char r, g, b;
 	al_unmap_rgb(theParticle->color, &r, &g, &b);
-	theParticle->color = al_map_rgba(r*(1000-theParticle->age)/1000,g*(1000-theParticle->age)/1000,b*(1000-theParticle->age)/1000, theParticle->age+50);
+	theParticle->color = al_map_rgba(r*(1000-theParticle->age)/1000,g*(1000-theParticle->age)/1000,b*(1000-theParticle->age)/1000, theParticle->age + 50);
 	theParticle->age++;
 	if(theParticle->age > 50){
 		theParticle->x = -10;
@@ -572,19 +571,17 @@ void updateAsSpark(struct particle * theParticle){
 	theParticle->y += theParticle->vy;
 	theParticle->vy += gravity/FPS * 0.8;
 
-	if(theParticle->x+theParticle->size > width || theParticle->x-theParticle->size < 0){
+	if(theParticle->x + theParticle->size > width || theParticle->x - theParticle->size < 0){
 		theParticle->vx *= co_of_restitution;
-		if(theParticle->x-theParticle->size < 0)
+		if(theParticle->x - theParticle->size < 0)
 			theParticle->x = theParticle->size;
 		else
-			theParticle->x = width-theParticle->size;
+			theParticle->x = width - theParticle->size;
 	}
-	if(theParticle->y+theParticle->size > height || theParticle->y-theParticle->size < 0){
+	if(theParticle->y + theParticle->size > height){
 		theParticle->vy *= co_of_restitution;
-		if(theParticle->y-theParticle->size < 0)
-			theParticle->y = theParticle->size;
-		else
-			theParticle->y = height-theParticle->size;
+		if(theParticle->size != theParticle->y)
+			theParticle->y = height - theParticle->size;
 	}
 };
 
@@ -593,37 +590,37 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
     double deltaY = (theParticle->y-theBlackHole->y);
 	float angle = atan2(deltaY,deltaX);
 	double dist = 1+(int)abs(((int)theParticle->x - (int)theBlackHole->x)^2 + ((int)theParticle->y - (int)theBlackHole->y)^2);
-    theParticle->vx += (-2 * cos(angle)) / dist;
-    theParticle->vy += (-2 * sin(angle)) / dist;
+    theParticle->vx += (-6 * cos(angle)/FPS);// / dist;
+    theParticle->vy += (-6 * sin(angle)/FPS);// / dist;
 
 };
 
-void drawText(ALLEGRO_FONT *font24){
+void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color){
 	if(isShowing[CO_OF_REST_UP]){
-		al_draw_textf(font24, al_map_rgb(50,250,50), 15, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
-		al_draw_text(font24, al_map_rgb(50,250,50), 355, 15, 0, "+  -");
+		al_draw_textf(font24, color, 15, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
+		al_draw_text(font24, color, 355, 15, 0, "+  -");
 	}if(isShowing[GRAVITY_UP]){
-		al_draw_textf(font24, al_map_rgb(50,250,50), 15, 45, 0, "Gravity: %f", gravity * -1);
-		al_draw_text(font24, al_map_rgb(50,250,50), 195, 45, 0, "+  -");
+		al_draw_textf(font24, color, 15, 45, 0, "Gravity: %f", gravity * -1);
+		al_draw_text(font24, color, 195, 45, 0, "+  -");
 	}if(isShowing[EXPLOSIVE_UP]){
-		al_draw_textf(font24, al_map_rgb(50,250,50), 15, 75, 0, "Explosiveness: %f", explosiveness);
-		al_draw_text(font24, al_map_rgb(50,250,50), 245, 75, 0, "+  -");
+		al_draw_textf(font24, color, 15, 75, 0, "Explosiveness: %f", explosiveness);
+		al_draw_text(font24, color, 245, 75, 0, "+  -");
 	}if(isShowing[PART_PER_TICK_UP]){
-		al_draw_textf(font24, al_map_rgb(50,250,50), 15, 105, 0, "Particles Per Tick: %i", particlesPerTick);
-		al_draw_text(font24, al_map_rgb(50,250,50), 230, 105, 0, "+  -");
+		al_draw_textf(font24, color, 15, 105, 0, "Particles Per Tick: %i", particlesPerTick);
+		al_draw_text(font24, color, 230, 105, 0, "+  -");
 	}if(isShowing[SPARK_TRAIL_UP]){
-		al_draw_textf(font24, al_map_rgb(50,250,50), 15, 135, 0, "Spark Trail: %f", 1.0/sparkliness);
-		al_draw_text(font24, al_map_rgb(50,250,50), 230, 135, 0, "+  -");
+		al_draw_textf(font24, color, 15, 135, 0, "Spark Trail: %f", 1.0/sparkliness);
+		al_draw_text(font24, color, 230, 135, 0, "+  -");
 	}if(true){
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 75, ALLEGRO_ALIGN_RIGHT, "Fizzle");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 105, ALLEGRO_ALIGN_RIGHT, "Circles");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 135, ALLEGRO_ALIGN_RIGHT, "Frozen");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, 165, ALLEGRO_ALIGN_RIGHT, "Black Hole");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, height-25, ALLEGRO_ALIGN_RIGHT, "Square");
-		al_draw_text(font24, al_map_rgb(50,250,50), width-40, height-55, ALLEGRO_ALIGN_RIGHT, "Circle");
+		al_draw_text(font24, color, width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
+		al_draw_text(font24, color, width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
+		al_draw_text(font24, color, width-40, 75, ALLEGRO_ALIGN_RIGHT, "Fizzle");
+		al_draw_text(font24, color, width-40, 105, ALLEGRO_ALIGN_RIGHT, "Circles");
+		al_draw_text(font24, color, width-40, 135, ALLEGRO_ALIGN_RIGHT, "Frozen");
+		al_draw_text(font24, color, width-40, 165, ALLEGRO_ALIGN_RIGHT, "Black Hole");
+		al_draw_text(font24, color, width-40, height-25, ALLEGRO_ALIGN_RIGHT, "Square");
+		al_draw_text(font24, color, width-40, height-55, ALLEGRO_ALIGN_RIGHT, "Circle");
 	}
 	al_draw_rectangle(width-24, (particleType-4)*30 + 20, width-16, (particleType-4)*30 + 29, al_map_rgb(200,0,100), 8);
-	al_draw_rectangle(width-24, (particleShape-15)*30 + height-51, width-16, (particleShape-15)*30 + height-42, al_map_rgb(200,0,100), 8);
+	al_draw_rectangle(width-24, (particleShape-15)*30 + height-81, width-16, (particleShape-15)*30 + height-72, al_map_rgb(200,0,100), 8);
 };

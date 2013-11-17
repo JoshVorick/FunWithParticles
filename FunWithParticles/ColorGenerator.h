@@ -14,12 +14,12 @@ private:
 	float h,s,v,h_min,h_max,s_min,s_max,v_min,v_max;
 	SliderBar *hBar_min, *hBar_max, *sBar_min, *sBar_max, *vBar_min, *vBar_max;
 	ALLEGRO_FONT *font18;
-
+	ALLEGRO_COLOR color;
 	ALLEGRO_COLOR map_hsv(float hue, float sat, float var);
 
 public:
 	ColorGenerator();
-	ColorGenerator(int x, int y);
+	ColorGenerator(int x, int y, ALLEGRO_COLOR color);
 
 	bool processMouseCoor(int mouseX, int mouseY, bool isDown); //returns true if being used
 	ALLEGRO_COLOR getNextColor();
