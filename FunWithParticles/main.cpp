@@ -3,9 +3,12 @@
 #include <allegro5\allegro_font.h>
 #include <allegro5\allegro_ttf.h>
 #include <math.h>
+#include <vector>
 
 #include "Button.h"
 #include "ColorGenerator.h"
+
+using namespace std;
 
 enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES, SELECT_FROZEN, SELECT_BLACKHOLE, 
 	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE, SELECT_BLACK_HOLE};
@@ -48,11 +51,15 @@ ColorGenerator *colorGen;
 bool showColors = true;
 
 int main(void){
-	struct particle liveParticles[maxParticles];
-	struct particle blackHoles[maxBlackHoles];
-	int curParticle = 0;
+	//struct particle liveParticles[maxParticles];
+	//struct particle blackHoles[maxBlackHoles];
+	
+	vector<struct particle> vliveParticles;
+	vector<struct particle> vblackHoles;
+
+	//int curParticle = 0;
 	int curSparkle = 0;
-	int curBlackHole = 0;
+	//int curBlackHole = 0;
 	bool mouseDown = false;
 	bool done = false;
 	bool redraw = true;
@@ -81,7 +88,7 @@ int main(void){
 	al_init_primitives_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
-
+	/*
 	for(int i=0; i<maxParticles; i++){
 		liveParticles[i].age=0;
 		liveParticles[i].x=0;
@@ -99,7 +106,7 @@ int main(void){
 		blackHoles[i].vy=0;
 		blackHoles[i].size=0;
 		blackHoles[i].alive=false;
-	}
+	}*/
 	
 	buttons[CO_OF_REST_UP] = new Button(350,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[CO_OF_REST_DOWN] = new Button(385,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
@@ -195,7 +202,7 @@ int main(void){
 						isUsingButton = true;
 					}
 				}
-			
+			/*
 			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE && mouseY>=0){
 				for(int i=0; i<particlesPerTick; i++){
 					createNewParticle(&liveParticles[curParticle]);
@@ -229,6 +236,47 @@ int main(void){
 						}
 					}
 				}
+			}*/
+			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE && mouseY>=0){
+				for(int i=0; i<particlesPerTick; i++){
+					struct particle newParticle;
+					createNewParticle(&newParticle);
+					vliveParticles.push_back(newParticle);
+				}
+			}
+			if(particleType != SELECT_FROZEN){
+				for(int i=0;i<vliveParticles.size();i++){
+					for(int j=0;j<vblackHoles.size();j++){
+						processBlackHoleGravity(&vliveParticles[i], &vblackHoles[j]);
+					}
+					if(particleType == SELECT_BALL)
+						updateAsBall(&vliveParticles[i]);
+					else if(particleType == SELECT_CIRCLES){
+						updateAsBall(&vliveParticles[i]);
+						vliveParticles[i].size = height - vliveParticles[i].y;
+					}else if(particleType == SELECT_SPARK){
+						updateAsSpark(&vliveParticles[i]);
+						if(vliveParticles[i].size == radius && curSparkle == 0){
+							struct particle newSparkle;
+							createNewSparkle(&vliveParticles[i], &newSparkle);
+							vliveParticles.push_back(newSparkle);
+						}else if(vliveParticles[i].alive == false){
+							vliveParticles.erase(vliveParticles.begin()+i);
+							i--;
+						}
+					}else if(particleType == SELECT_FIZZLE){
+						updateAsSpark(&vliveParticles[i]);
+						if(i % sparkliness == 0){
+							struct particle newSparkle;
+							createNewSparkle(&vliveParticles[i], &newSparkle);
+							vliveParticles.push_back(newSparkle);
+						}
+						if(vliveParticles[i].alive == false){
+							vliveParticles.erase(vliveParticles.begin()+i);
+							i--;
+						}
+					}
+				}
 			}
 			curSparkle = (curSparkle + 1) % sparkliness;
 			break;
@@ -252,11 +300,13 @@ int main(void){
 			}
 			if(!isUsingButton){
 				if(particleType != SELECT_BLACKHOLE){
-					createNewParticle(&liveParticles[curParticle]);
-					curParticle = (curParticle+1) % maxParticles;
+					struct particle newParticle;
+					createNewParticle(&newParticle);
+					vliveParticles.push_back(newParticle);
 				}else{
-					createNewParticle(&blackHoles[curBlackHole]);
-					curBlackHole = (curBlackHole+1) % maxBlackHoles;
+					struct particle newblackHole;
+					createNewParticle(&newblackHole);
+					vblackHoles.push_back(newblackHole);
 				}
 			}
 			break;
@@ -306,11 +356,11 @@ int main(void){
 				saveNewBackground = true;
 				break;
 			case ALLEGRO_KEY_X:
-				for(int i=0; i<maxParticles; i++){
-					liveParticles[i].alive = false;
+				for(int i=0; i<vliveParticles.size(); i++){
+					vliveParticles.clear();
 				}
-				for(int i=0; i<maxBlackHoles; i++){
-					blackHoles[i].alive = false;
+				for(int i=0; i<vblackHoles.size(); i++){
+					vblackHoles.clear();
 				}
 				break;
 			}
@@ -329,7 +379,7 @@ int main(void){
 				al_set_target_bitmap(background);
 				al_clear_to_color(al_map_rgb(0,0,0));
 			}
-			
+			/*
 			for(int i=0; i<maxBlackHoles; i++){
 				if(blackHoles[i].alive)
 					al_draw_filled_circle(blackHoles[i].x, blackHoles[i].y, blackHoles[i].size, al_map_rgb(255, 255, 255));
@@ -355,7 +405,21 @@ int main(void){
 						al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
 							liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
 				}
-			}			
+			}*/		
+			for(int i=0; i<vblackHoles.size(); i++){
+				al_draw_filled_circle(vblackHoles[i].x, vblackHoles[i].y, vblackHoles[i].size, al_map_rgb(255, 255, 255));
+			}
+			if(particleShape == SELECT_SHAPE_CIRCLE){
+				for(int i=0; i<vliveParticles.size(); i++){
+					al_draw_filled_circle(vliveParticles[i].x, vliveParticles[i].y, vliveParticles[i].size, vliveParticles[i].color);
+				}
+			}
+			if(particleShape == SELECT_SHAPE_SQUARE){
+				for(int i=0; i<vliveParticles.size(); i++){
+					al_draw_filled_rectangle(vliveParticles[i].x-vliveParticles[i].size, vliveParticles[i].y-vliveParticles[i].size, 
+							vliveParticles[i].size+vliveParticles[i].x, vliveParticles[i].size+vliveParticles[i].y, vliveParticles[i].color);
+				}
+			}	
 			if(saveNewBackground){
 				al_set_target_bitmap(al_get_backbuffer(display));
 				saveNewBackground = false;
@@ -370,6 +434,9 @@ int main(void){
 				colorGen->draw();
 			if(showButtons)
 				drawText(font24, limegreen);
+			
+			al_draw_textf(font24, limegreen, 300, 250, 0, "Number of Balls: %i", vliveParticles.size());
+			al_draw_textf(font24, limegreen, 300, 280, 0, "Number of Black Holes: %i", vblackHoles.size());
 
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
