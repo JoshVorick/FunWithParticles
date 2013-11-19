@@ -278,6 +278,10 @@ int main(void){
 					}
 				}
 			}
+			while(vliveParticles.size()*(vblackHoles.size()+2) > 20000){
+				vliveParticles.erase(vliveParticles.begin());
+			}
+
 			curSparkle = (curSparkle + 1) % sparkliness;
 			break;
 		case ALLEGRO_EVENT_MOUSE_AXES:
@@ -573,8 +577,8 @@ void processButtonClick(Button *button, int i){
 		break;
 	case SPARK_TRAIL_UP:
 		sparkliness -= 1;
-		if(sparkliness < 1)
-			sparkliness = 1;
+		if(sparkliness < 2)
+			sparkliness = 2;
 		break;
 	case SPARK_TRAIL_DOWN:
 		sparkliness += 1;
