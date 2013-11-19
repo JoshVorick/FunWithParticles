@@ -153,20 +153,22 @@ int main(void){
 		case ALLEGRO_EVENT_KEY_DOWN:
 			if(ev.keyboard.keycode == ALLEGRO_KEY_SPACE){
 				start = true;
-				break;
 			}else if(ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
 				start = true;
 				done = true;
-			}/*
+			}
+			break;
 		case ALLEGRO_EVENT_DISPLAY_CLOSE:
 			start = true;
 			done = true;
-			break;*/
+			break;
 		}
 		if(redraw && al_is_event_queue_empty(event_queue)){
-			al_draw_text(font24, al_map_rgb(50,250,250), width/2, height/2 - 60, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
+			al_draw_text(font24, al_map_rgb(20,250,250), width/2, height/2 - 120, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
+			al_draw_text(font24, al_map_rgb(100,200,255), width/2, height/2 - 90, ALLEGRO_ALIGN_CENTRE, "Press S to save as background. Press X to clear the screen.");
+			al_draw_text(font24, al_map_rgb(180,150,255), width/2, height/2 - 60, ALLEGRO_ALIGN_CENTRE, "Use keys 1-6 to toggle the particle type.");
 			al_draw_text(font24, al_map_rgb(250,50,250), width/2, height/2 - 30, ALLEGRO_ALIGN_CENTRE, "Press escape to exit.");
-			al_draw_text(font24, al_map_rgb(250,250,50), width/2, height/2 + 30, ALLEGRO_ALIGN_CENTRE, "Press space to continue.");
+			al_draw_text(font24, al_map_rgb(250,50,30), width/2, height/2 + 30, ALLEGRO_ALIGN_CENTRE, "Press space to continue.");
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
 		}
@@ -297,8 +299,19 @@ int main(void){
 			case ALLEGRO_KEY_5:
 				processButtonClick(buttons[SELECT_FROZEN], SELECT_FROZEN);
 				break;
+			case ALLEGRO_KEY_6:
+				processButtonClick(buttons[SELECT_BLACKHOLE], SELECT_BLACKHOLE);
+				break;
 			case ALLEGRO_KEY_S:
-				saveNewBackground = true;;
+				saveNewBackground = true;
+				break;
+			case ALLEGRO_KEY_X:
+				for(int i=0; i<maxParticles; i++){
+					liveParticles[i].alive = false;
+				}
+				for(int i=0; i<maxBlackHoles; i++){
+					blackHoles[i].alive = false;
+				}
 				break;
 			}
 			break;
