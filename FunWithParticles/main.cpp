@@ -108,10 +108,10 @@ int main(void){
 		blackHoles[i].alive=false;
 	}*/
 	
-	buttons[CO_OF_REST_UP] = new Button(350,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[CO_OF_REST_DOWN] = new Button(385,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[GRAVITY_UP] = new Button(190,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[GRAVITY_DOWN] = new Button(225,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[CO_OF_REST_UP] = new Button(15,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[CO_OF_REST_DOWN] = new Button(50,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[GRAVITY_UP] = new Button(15,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[GRAVITY_DOWN] = new Button(50,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_BALL] = new Button(width-30,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_SPARK] = new Button(width-30,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_FIZZLE] = new Button(width-30,75,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
@@ -119,12 +119,14 @@ int main(void){
 	buttons[SELECT_FROZEN] = new Button(width-30,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_BLACKHOLE] = new Button(width-30,165,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_GRAVITY_BALL] = new Button(width-30,195,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[EXPLOSIVE_UP] = new Button(240,75,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[EXPLOSIVE_DOWN] = new Button(275,75,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[PART_PER_TICK_UP] = new Button(225,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[PART_PER_TICK_DOWN] = new Button(260,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[SPARK_TRAIL_UP] = new Button(225,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	buttons[SPARK_TRAIL_DOWN] = new Button(260,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[EXPLOSIVE_UP] = new Button(15,75,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[EXPLOSIVE_DOWN] = new Button(50,75,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[PART_PER_TICK_UP] = new Button(15,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[PART_PER_TICK_DOWN] = new Button(50,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[SPARK_TRAIL_UP] = new Button(15,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[SPARK_TRAIL_DOWN] = new Button(50,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	//buttons[SPARK_TRAIL_UP] = new Button(15,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	//buttons[SPARK_TRAIL_DOWN] = new Button(50,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 
@@ -203,41 +205,16 @@ int main(void){
 						isUsingButton = true;
 					}
 				}
-			/*
-			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE && mouseY>=0){
-				for(int i=0; i<particlesPerTick; i++){
-					createNewParticle(&liveParticles[curParticle]);
-					curParticle = (curParticle+1) % maxParticles;
+				
+			if(particleType == SELECT_GRAVITY_BALL)
+				while(vliveParticles.size() + vblackHoles.size() > 400){
+					vliveParticles.erase(vliveParticles.begin());
 				}
-			}
-			if(particleType != SELECT_FROZEN){
-				for(int i=0;i<maxParticles;i++){
-					for(int j=0;j<maxBlackHoles;j++){
-						if(blackHoles[j].alive)
-							processBlackHoleGravity(&liveParticles[i], &blackHoles[j]);
-					}
-					if(liveParticles[i].alive){
-						if(particleType == SELECT_BALL)
-							updateAsBall(&liveParticles[i]);
-						else if(particleType == SELECT_CIRCLES){
-							updateAsBall(&liveParticles[i]);
-							liveParticles[i].size = height - liveParticles[i].y;
-						}else if(particleType == SELECT_SPARK){
-							updateAsSpark(&liveParticles[i]);
-							if(liveParticles[i].size == radius && curSparkle == 0){
-								createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
-								curParticle = (curParticle+1) % maxParticles;
-							}
-						}else if(particleType == SELECT_FIZZLE){
-							updateAsSpark(&liveParticles[i]);
-							if(i % sparkliness == 0){
-								createNewSparkle(&liveParticles[i], &liveParticles[curParticle]);
-								curParticle = (curParticle+1) % maxParticles;
-							}
-						}
-					}
+			else
+				while(vliveParticles.size()*(vblackHoles.size()+1) > 30000){
+					vliveParticles.erase(vliveParticles.begin());
 				}
-			}*/
+			
 			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE && mouseY>=0){
 				for(int i=0; i<particlesPerTick; i++){
 					struct particle newParticle;
@@ -257,13 +234,13 @@ int main(void){
 						vliveParticles[i].size = height - vliveParticles[i].y;
 					}else if(particleType == SELECT_SPARK){
 						updateAsSpark(&vliveParticles[i]);
-						if(vliveParticles[i].size == radius && curSparkle == 0){
+						if(vliveParticles[i].alive == false){
+							vliveParticles.erase(vliveParticles.begin()+i);
+							i--;
+						}else if(vliveParticles[i].size == radius && curSparkle == 0){
 							struct particle newSparkle;
 							createNewSparkle(&vliveParticles[i], &newSparkle);
 							vliveParticles.push_back(newSparkle);
-						}else if(vliveParticles[i].alive == false){
-							vliveParticles.erase(vliveParticles.begin()+i);
-							i--;
 						}
 					}else if(particleType == SELECT_FIZZLE){
 						updateAsSpark(&vliveParticles[i]);
@@ -285,20 +262,23 @@ int main(void){
 					}
 				}
 			}
-			if(particleType == SELECT_GRAVITY_BALL)
-				while(vliveParticles.size()*vliveParticles.size()*(vblackHoles.size()+1) > 20000){
-					vliveParticles.erase(vliveParticles.begin());
-				}
-			else
-				while(vliveParticles.size()*(vblackHoles.size()+1) > 20000){
-					vliveParticles.erase(vliveParticles.begin());
-				}
-
 			curSparkle = (curSparkle + 1) % sparkliness;
+			ALLEGRO_EVENT ev2;
+			al_peek_next_event(event_queue, &ev2);
+			while(ev2.type == ALLEGRO_EVENT_TIMER && !al_is_event_queue_empty(event_queue)){
+				al_drop_next_event(event_queue);
+				al_peek_next_event(event_queue, &ev2);
+			}
 			break;
 		case ALLEGRO_EVENT_MOUSE_AXES:
 			mouseX = ev.mouse.x;
 			mouseY = ev.mouse.y;
+			ALLEGRO_EVENT ev3;
+			al_peek_next_event(event_queue, &ev3);
+			while(ev3.type == ALLEGRO_EVENT_TIMER && !al_is_event_queue_empty(event_queue)){
+				al_drop_next_event(event_queue);
+				al_peek_next_event(event_queue, &ev3);
+			}
 			break;
 		case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
 			mouseDown = true;
@@ -390,7 +370,7 @@ int main(void){
 			done = true;
 			break;
 		}
-		if(redraw && al_is_event_queue_empty(event_queue)){
+		if(redraw && (al_is_event_queue_empty(event_queue))){
 			redraw = false;
 			al_draw_bitmap(background, 0, 0, 0);
 
@@ -398,33 +378,7 @@ int main(void){
 				al_set_target_bitmap(background);
 				al_clear_to_color(al_map_rgb(0,0,0));
 			}
-			/*
-			for(int i=0; i<maxBlackHoles; i++){
-				if(blackHoles[i].alive)
-					al_draw_filled_circle(blackHoles[i].x, blackHoles[i].y, blackHoles[i].size, al_map_rgb(255, 255, 255));
-			}
-			if(particleShape == SELECT_SHAPE_CIRCLE){
-				for(int i=curParticle; i<maxParticles; i++){
-					if(liveParticles[i].alive)
-						al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
-				}
-				for(int i=0; i<curParticle; i++){
-					if(liveParticles[i].alive)
-						al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
-				}
-			}
-			if(particleShape == SELECT_SHAPE_SQUARE){
-				for(int i=curParticle; i<maxParticles; i++){
-					if(liveParticles[i].alive)
-						al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
-							liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
-				}
-				for(int i=0; i<curParticle; i++){
-					if(liveParticles[i].alive)
-						al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
-							liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
-				}
-			}*/		
+
 			for(int i=0; i<vblackHoles.size(); i++){
 				al_draw_filled_circle(vblackHoles[i].x, vblackHoles[i].y, vblackHoles[i].size, al_map_rgb(255, 255, 255));
 			}
@@ -712,20 +666,20 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
 
 void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color){
 	if(isShowing[CO_OF_REST_UP]){
-		al_draw_textf(font24, color, 15, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
-		al_draw_text(font24, color, 355, 15, 0, "+  -");
+		al_draw_textf(font24, color, 75, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
+		al_draw_text(font24, color, 20, 15, 0, "+  -");
 	}if(isShowing[GRAVITY_UP]){
-		al_draw_textf(font24, color, 15, 45, 0, "Gravity: %f", gravity * -1);
-		al_draw_text(font24, color, 195, 45, 0, "+  -");
+		al_draw_textf(font24, color, 75, 45, 0, "Gravity: %f", gravity * -1);
+		al_draw_text(font24, color, 20, 45, 0, "+  -");
 	}if(isShowing[EXPLOSIVE_UP]){
-		al_draw_textf(font24, color, 15, 75, 0, "Explosiveness: %f", explosiveness);
-		al_draw_text(font24, color, 245, 75, 0, "+  -");
+		al_draw_textf(font24, color, 75, 75, 0, "Explosiveness: %f", explosiveness);
+		al_draw_text(font24, color, 20, 75, 0, "+  -");
 	}if(isShowing[PART_PER_TICK_UP]){
-		al_draw_textf(font24, color, 15, 105, 0, "Particles Per Tick: %i", particlesPerTick);
-		al_draw_text(font24, color, 230, 105, 0, "+  -");
+		al_draw_textf(font24, color, 75, 105, 0, "Particles Per Tick: %i", particlesPerTick);
+		al_draw_text(font24, color, 20, 105, 0, "+  -");
 	}if(isShowing[SPARK_TRAIL_UP]){
-		al_draw_textf(font24, color, 15, 135, 0, "Spark Trail: %f", 1.0/sparkliness);
-		al_draw_text(font24, color, 230, 135, 0, "+  -");
+		al_draw_textf(font24, color, 75, 135, 0, "Spark Trail: %f", 1.0/sparkliness);
+		al_draw_text(font24, color, 20, 135, 0, "+  -");
 	}if(true){
 		al_draw_text(font24, color, width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
 		al_draw_text(font24, color, width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
