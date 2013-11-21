@@ -89,26 +89,7 @@ int main(void){
 	al_init_primitives_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
-	/*
-	for(int i=0; i<maxParticles; i++){
-		liveParticles[i].age=0;
-		liveParticles[i].x=0;
-		liveParticles[i].y=0;
-		liveParticles[i].vx=0;
-		liveParticles[i].vy=0;
-		liveParticles[i].size=0;
-		liveParticles[i].alive=false;
-	}
-	for(int i=0; i<maxBlackHoles;i++){
-		blackHoles[i].age=0;
-		blackHoles[i].x=0;
-		blackHoles[i].y=0;
-		blackHoles[i].vx=0;
-		blackHoles[i].vy=0;
-		blackHoles[i].size=0;
-		blackHoles[i].alive=false;
-	}*/
-	
+
 	buttons[CO_OF_REST_UP] = new Button(15,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[CO_OF_REST_DOWN] = new Button(50,15,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[GRAVITY_UP] = new Button(15,45,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
@@ -591,8 +572,8 @@ void processButtonClick(Button *button, int i){
 		break;
 	case RADIUS_DOWN:
 		radius -= 1;
-		if(radius < 0)
-			radius = 0;
+		if(radius < 2)
+			radius = 2;
 		break;
 	case SELECT_SHAPE_CIRCLE:
 		particleShape = SELECT_SHAPE_CIRCLE;
@@ -618,7 +599,7 @@ void createNewSparkle(struct particle *spark, struct particle *sparkle){
 	sparkle->age = 0;
 	sparkle->x = spark->x + (rand()%4 - 2); 
 	sparkle->y = spark->y + (rand()%4 - 2);
-	sparkle->size = 2;
+	sparkle->size = radius/2;
 	sparkle->vx = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
 	sparkle->vy = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
 	sparkle->color = spark->color;
@@ -651,7 +632,7 @@ void updateAsSpark(struct particle * theParticle){
 	al_unmap_rgb(theParticle->color, &r, &g, &b);
 	theParticle->color = al_map_rgba(r*(1000-theParticle->age)/1000,g*(1000-theParticle->age)/1000,b*(1000-theParticle->age)/1000, theParticle->age + 50);
 	theParticle->age++;
-	if(theParticle->age > 50){
+	if(theParticle->age > 55){
 		theParticle->x = -10;
 		theParticle->vx = 0;
 		theParticle->y = -10;
