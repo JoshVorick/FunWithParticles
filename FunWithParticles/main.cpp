@@ -11,8 +11,8 @@
 using namespace std;
 
 enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES, SELECT_FROZEN, SELECT_BLACKHOLE, SELECT_GRAVITY_BALL, 
-	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE};
-const int NUM_BUTTONS = 19;
+	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, PARTICLE_NUMBER_UP, PARTICLE_NUMBER_DOWN, RADIUS_UP, RADIUS_DOWN, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE};
+const int NUM_BUTTONS = 23;
 
 const int FPS = 120;
 const int maxParticles = 3000;
@@ -44,6 +44,7 @@ int particleType = SELECT_BALL; //i.e. ball, spark, etc.
 int particleShape = SELECT_SHAPE_CIRCLE;
 int particlesPerTick = 1;
 int sparkliness = 5;
+int particleNumber = 10;
 int radius = 5;
 bool isShowing[NUM_BUTTONS];
 bool showButtons = true;
@@ -125,8 +126,10 @@ int main(void){
 	buttons[PART_PER_TICK_DOWN] = new Button(50,105,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SPARK_TRAIL_UP] = new Button(15,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SPARK_TRAIL_DOWN] = new Button(50,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	//buttons[SPARK_TRAIL_UP] = new Button(15,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
-	//buttons[SPARK_TRAIL_DOWN] = new Button(50,135,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[PARTICLE_NUMBER_UP] = new Button(15,185,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[PARTICLE_NUMBER_DOWN] = new Button(50,185,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[RADIUS_UP] = new Button(15,215,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
+	buttons[RADIUS_DOWN] = new Button(50,215,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,al_map_rgb(100,0,200),al_map_rgb(100,0,100),al_map_rgb(200,0,100));
 
@@ -207,11 +210,15 @@ int main(void){
 				}
 				
 			if(particleType == SELECT_GRAVITY_BALL)
-				while(vliveParticles.size() + vblackHoles.size() > 400){
+				while(vliveParticles.size() + vblackHoles.size() > 40 * particleNumber){
+					vliveParticles.erase(vliveParticles.begin());
+				}
+			else if(particleType == SELECT_FIZZLE)
+				while(vliveParticles.size()*(vblackHoles.size()+1) > 200 * particleNumber){
 					vliveParticles.erase(vliveParticles.begin());
 				}
 			else
-				while(vliveParticles.size()*(vblackHoles.size()+1) > 30000){
+				while(vliveParticles.size()*(vblackHoles.size()+1) > 3000 * particleNumber){
 					vliveParticles.erase(vliveParticles.begin());
 				}
 			
@@ -567,6 +574,26 @@ void processButtonClick(Button *button, int i){
 		if(sparkliness > 25)
 			sparkliness = 25;
 		break;
+	case PARTICLE_NUMBER_UP:
+		particleNumber += 1;
+		if(particleNumber > 30)
+			particleNumber = 30;
+		break;
+	case PARTICLE_NUMBER_DOWN:
+		particleNumber -= 1;
+		if(particleNumber < 0)
+			particleNumber = 0;
+		break;
+	case RADIUS_UP:
+		radius += 1;
+		if(radius > 100)
+			radius = 100;
+		break;
+	case RADIUS_DOWN:
+		radius -= 1;
+		if(radius < 0)
+			radius = 0;
+		break;
 	case SELECT_SHAPE_CIRCLE:
 		particleShape = SELECT_SHAPE_CIRCLE;
 		break;
@@ -680,6 +707,12 @@ void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color){
 	}if(isShowing[SPARK_TRAIL_UP]){
 		al_draw_textf(font24, color, 75, 135, 0, "Spark Trail: %f", 1.0/sparkliness);
 		al_draw_text(font24, color, 20, 135, 0, "+  -");
+	}if(isShowing[PARTICLE_NUMBER_UP]){
+		al_draw_textf(font24, color, 75, 185, 0, "# Particles: %i", particleNumber);
+		al_draw_text(font24, color, 20, 185, 0, "+  -");
+	}if(isShowing[RADIUS_UP]){
+		al_draw_textf(font24, color, 75, 215, 0, "Radius: %i", radius);
+		al_draw_text(font24, color, 20, 215, 0, "+  -");
 	}if(true){
 		al_draw_text(font24, color, width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
 		al_draw_text(font24, color, width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
@@ -692,5 +725,5 @@ void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color){
 		al_draw_text(font24, color, width-40, height-55, ALLEGRO_ALIGN_RIGHT, "Circle");
 	}
 	al_draw_rectangle(width-24, (particleType-4)*30 + 20, width-16, (particleType-4)*30 + 29, al_map_rgb(200,0,100), 8);
-	al_draw_rectangle(width-24, (particleShape-16)*30 + height-81, width-16, (particleShape-16)*30 + height-72, al_map_rgb(200,0,100), 8);
+	al_draw_rectangle(width-24, (particleShape-20)*30 + height-81, width-16, (particleShape-20)*30 + height-72, al_map_rgb(200,0,100), 8);
 };
