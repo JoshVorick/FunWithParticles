@@ -1,10 +1,8 @@
 FunWithParticles
 ================
 
-This is a game/simulator that I started after having my wisdom teeth pulled after reading a neat article on algorithmic color generation. It started out as a bouncy ball simulator with random colors and has developed from there.
-
+This is a game/simulator that I started after having my wisdom teeth pulled. It started out as a bouncy ball simulator with random colors and has developed from there. This is, in my opinion, extremely fun to mess around with. By tinkering with the different variables and switching bewtween particle types (i.e. black hole -> frozen -> spark -> ball) you can make some really fascinating patterns (see video below or screenshots at bottom of readme for a few examples). 
 ### ![Super Amazing YT video showing off this program!](https://www.youtube.com/watch?v=ij0-msWfhqQ)
-
 Features
 ========
 ### Particle Types
@@ -15,6 +13,7 @@ Features
 *  **Frozen:** Particles don't update and look like balls.
 *  **Black Hole:** All particles on screen (except for other black holes) will get pulled toward the black hole. While placing black holes, all other particles get frozen. Black Holes do not move.
 *  **Gravity Ball:** All particles pull all other particles (except black holes) towards each other. Note: Gets very crazy very quickly.
+*  **Flame** A bunsen burner-like flame. Use Gravity to change its size. My friends were joking around with my fascination with the bunsen burner saying that there won't be bunsen burners in computer science. I proved them wrong.
 
 ### Variables
 * **Coefficient of Restitution:** How much speed particles retain after bouncing off a wall.
@@ -47,13 +46,9 @@ Screenshots
 ===========
 
 ![screen4](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%284%29.png)
-![screen1](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%281%29.png)
-![screen5](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%285%29.png)
-![screen3](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%283%29.png)
-![screen2](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%282%29.png)
-![screen6](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%286%29.png)
-![screen7](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%287%29.png)
-![screen8](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%288%29.png)
-![screen9](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%289%29.png)
-![screen10](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%2810%29.png)
-![screen11](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%2811%29.png)
+![screen1](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%281%29.png)-![screen5](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%285%29.png)
+![screen3](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%283%29.png)-![screen2](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%282%29.png)
+![screen6](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%286%29.png)-![screen7](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%287%29.png)
+![screen8](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%288%29.png)-![screen9](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%289%29.png)
+![screen10](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%2810%29.png)-![screen11](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%2811%29.png)
+![screen12](https://raw.github.com/TheBananaWhale/FunWithParticles/master/img/Screenshot%20%2812%29.png)
