@@ -4,6 +4,7 @@
 #include <allegro5\allegro_ttf.h>
 #include <math.h>
 #include <vector>
+#include <algorithm>
 
 #include "Button.h"
 #include "ColorGenerator.h"
@@ -221,7 +222,7 @@ int main(void){
 			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE){
 				for(int i=0; i<particlesPerTick; i++){ //Creates multiple particles per tick if needed
 					if(particleType == SELECT_BUNSEN){ //If type=flame, creates more particles
-						for(int i=0; i<15;i++){
+						for(int i=0; i<30;i++){
 							struct particle newParticle;
 							createNewBunsen(&newParticle); //flame specific constructor
 							liveParticles.push_back(newParticle);
@@ -246,21 +247,14 @@ int main(void){
 						liveParticles[i].size = height - liveParticles[i].y; //Change size so that bottom of circle is touching the floor
 					}else if(particleType == SELECT_BUNSEN){
 						updateAsBunsen(&liveParticles[i]); //Update as flame
-						if(liveParticles[i].alive == false){
-							liveParticles.erase(liveParticles.begin()+i); //Remove dead flame
-							i--; //Subtract one so that the next element doesn't get skipped
-						}
 					}else if(particleType == SELECT_SPARK){
 						updateAsSpark(&liveParticles[i]); //Update as spark
-						if(liveParticles[i].alive == false){
-							liveParticles.erase(liveParticles.begin()+i); //Remove dead flame
-							i--; //Subtract one so that the next element doesn't get skipped
-						}else if(liveParticles[i].size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
+						if(liveParticles[i].size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
 							struct particle newSparkle;
 							createNewSparkle(&liveParticles[i], &newSparkle); //Create new trailing spark
 							liveParticles.push_back(newSparkle);
 						}
-					}else if(particleType == SELECT_FIZZLE){ //Not really usre how it works... Ooops...
+					}else if(particleType == SELECT_FIZZLE){ //Not really sure how it works... Ooops...
 						updateAsSpark(&liveParticles[i]);
 						if(i % sparkliness == 0){
 							struct particle newSparkle;
@@ -280,6 +274,8 @@ int main(void){
 					}
 				}
 			}
+			liveParticles.erase(std::remove_if (liveParticles.begin(), liveParticles.end(), [](const particle p) {return p.alive != true;}), liveParticles.end());
+
 			curSparkle = (curSparkle + 1) % sparkliness; //Lower sparkliness means  curSparkle will be 0 more often, meaning more sparkles will be created
 
 			//Delete all timer events that piled up, so that timer events don't jam the queue and mouse movements can be processed (and screen can be redrawn)
@@ -412,10 +408,10 @@ int main(void){
 				if(particleShape == SELECT_SHAPE_CIRCLE){
 					for(int i=0; i<liveParticles.size(); i++)
 						if(liveParticles[i].age != 0)
-							al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+							al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size-1, liveParticles[i].color);
 					for(int i=0; i<liveParticles.size(); i++)
 						if(liveParticles[i].age == 0)
-							al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
+							al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size-1, liveParticles[i].color);
 				}else{
 					for(int i=0; i<liveParticles.size(); i++)
 						if(liveParticles[i].age != 0)
@@ -524,8 +520,8 @@ void processButtonClick(Button *button, int i){
 		break;
 	case PART_PER_TICK_UP:
 		particlesPerTick += 1;
-		if(particlesPerTick > 5)
-			particlesPerTick = 5;
+		if(particlesPerTick > 10)
+			particlesPerTick = 10;
 		break;
 	case PART_PER_TICK_DOWN:
 		particlesPerTick -= 1;
@@ -594,7 +590,7 @@ void createNewSparkle(struct particle *spark, struct particle *sparkle){
 };
 
 void createNewBunsen(struct particle *newFlame){
-	float d = (rand()%10000) / (bunsenRadius*2.0);
+	float d = (rand()%10000) / (5000.0/bunsenRadius);
 	newFlame->x = mouseX+d-bunsenRadius; 
 	newFlame->y = mouseY;
 	newFlame->size = radius;
@@ -609,7 +605,7 @@ void createNewBunsen(struct particle *newFlame){
 		newFlame->age = 0;
 		newFlame->vx = 0;
 	}else{
-		if(d>50)
+		if(d>bunsenRadius)
 			newFlame->vx = (d-bunsenRadius)*0.05;
 		else if(d==bunsenRadius)
 			newFlame->vx = 0 + sin(mouseY/180.0)*0.1;
@@ -698,7 +694,7 @@ void updateAsBunsen(struct particle *flame){
 
 	if(flame->vy > 0.01)
 		flame->alive = false;
-	if(flame->age == 0){
+	if(flame->age == 0 && flame->vy > -4.9){
 		int rg = 150-(flame->vy - 0.01)*-30;
 		flame->color = al_map_rgb(rg/3, rg/3, 125);
 	}else{
