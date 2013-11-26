@@ -12,6 +12,7 @@ public:
 	Button();
 	Button(int x, int y, int width, int height, 
 		ALLEGRO_COLOR down, ALLEGRO_COLOR hover, ALLEGRO_COLOR up);
+	void setNewColors(ALLEGRO_COLOR down, ALLEGRO_COLOR hover, ALLEGRO_COLOR up);
 	bool processMouseCoor(int x, int y, bool isClicked);
 	bool isBeingHeld();
 	void draw();

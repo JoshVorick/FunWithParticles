@@ -72,7 +72,7 @@ int main(void){
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER *timer;
 	ALLEGRO_FONT *font24;
-	ALLEGRO_COLOR limegreen; //Text color
+	ALLEGRO_COLOR textcolor; //Text color
 	ALLEGRO_COLOR button1, button2, button3;
 	ALLEGRO_BITMAP *background;
 
@@ -94,7 +94,7 @@ int main(void){
 
 	//Initialize ALLEGRO variables
 	font24 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 24, 0);
-	limegreen = al_map_rgb(50,250,50);
+	textcolor = al_map_rgb(50,250,50);
 	button1 = al_map_rgb(200,0,100);
 	button2 = al_map_rgb(100,0,100);
 	button3 = al_map_rgb(100,0,200);
@@ -170,9 +170,10 @@ int main(void){
 			break;
 		}
 		if(redraw && al_is_event_queue_empty(event_queue)){ //Draw start menu
-			al_draw_text(font24, al_map_rgb(20,250,250), width/2, height/2 - 120, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
-			al_draw_text(font24, al_map_rgb(100,200,255), width/2, height/2 - 90, ALLEGRO_ALIGN_CENTRE, "Press S to save as background. Press X to clear the screen.");
-			al_draw_text(font24, al_map_rgb(180,150,255), width/2, height/2 - 60, ALLEGRO_ALIGN_CENTRE, "Use keys 1-6 to toggle the particle type.");
+			al_draw_text(font24, al_map_rgb(20,250,250), width/2, height/2 - 150, ALLEGRO_ALIGN_CENTRE, "Press B to toggle button options. Press C to toggle color options.");
+			al_draw_text(font24, al_map_rgb(100,200,255), width/2, height/2 - 120, ALLEGRO_ALIGN_CENTRE, "Press S to save as background. Press X to clear the screen.");
+			al_draw_text(font24, al_map_rgb(150,170,255), width/2, height/2 - 90, ALLEGRO_ALIGN_CENTRE, "Press V, N, M to change background, text, button color.");
+			al_draw_text(font24, al_map_rgb(200,150,255), width/2, height/2 - 60, ALLEGRO_ALIGN_CENTRE, "Use keys 1-8 to toggle the particle type.");
 			al_draw_text(font24, al_map_rgb(250,50,250), width/2, height/2 - 30, ALLEGRO_ALIGN_CENTRE, "Press escape to exit.");
 			al_draw_text(font24, al_map_rgb(250,50,30), width/2, height/2 + 30, ALLEGRO_ALIGN_CENTRE, "Press space to continue.");
 			al_flip_display();
@@ -376,6 +377,21 @@ int main(void){
 			case ALLEGRO_KEY_S:
 				saveNewBackground = true;
 				break;
+			case ALLEGRO_KEY_V:
+				al_set_target_bitmap(background); //Set bg to be the one drawn on
+				al_clear_to_color(colorGen->getNextColor()); //Clear bg to random color
+				al_set_target_bitmap(al_get_backbuffer(display)); //Set drawing target back to display
+				break;
+			case ALLEGRO_KEY_N:
+				textcolor = colorGen->getNextColor();
+				break;
+			case ALLEGRO_KEY_M:
+				button1 = colorGen->getNextColor();
+				button2 = colorGen->getNextColor();
+				button3 = colorGen->getNextColor();
+				for(int i=0; i<NUM_BUTTONS; i++)
+					buttons[i]->setNewColors(button1, button2, button3);
+				break;
 			case ALLEGRO_KEY_X:
 				for(int i=0; i<liveParticles.size(); i++){
 					liveParticles.clear();
@@ -444,10 +460,10 @@ int main(void){
 			if(showColors)
 				colorGen->draw();
 			if(showButtons)
-				drawText(font24, limegreen, button3);
+				drawText(font24, textcolor, button3);
 			
-			al_draw_textf(font24, limegreen, 10, height-60, 0, "Number of Balls: %i", liveParticles.size());
-			al_draw_textf(font24, limegreen, 10, height-30, 0, "Number of Black Holes: %i", vblackHoles.size());
+			al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", liveParticles.size());
+			al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", vblackHoles.size());
 
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
@@ -692,7 +708,7 @@ void updateAsBunsen(struct particle *flame){
 			flame->y = radius;
 	}
 
-	if(flame->vy > 0.01)
+	if(flame->vy > -0.3)
 		flame->alive = false;
 	if(flame->age == 0 && flame->vy > -4.9){
 		int rg = 150-(flame->vy - 0.01)*-30;

@@ -28,6 +28,12 @@ Button::Button(int x, int y, int width, int height,
 	isDown = false;
 }
 
+void Button::setNewColors(ALLEGRO_COLOR down, ALLEGRO_COLOR hover, ALLEGRO_COLOR up){
+	colorUp = up;
+	colorHover = hover;
+	colorDown = down;
+}
+
 bool Button::processMouseCoor(int x, int y, bool isClicked){
 	if(x1 < x &&  x < x2 && y1 < y && y < y2){
 		isHoveredOver = true;
