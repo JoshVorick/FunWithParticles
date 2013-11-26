@@ -6,13 +6,15 @@
 
 #include "SliderBar.h"
 
+enum {H,S,V};
+
 const double golden_ratio = 0.618033988749895;
 
 class ColorGenerator{
 private:
 	int x, y;
-	float h,s,v,h_min,h_max,s_min,s_max,v_min,v_max;
-	SliderBar *hBar_min, *hBar_max, *sBar_min, *sBar_max, *vBar_min, *vBar_max;
+	float h,s,v, min[3], max[3];
+	SliderBar *minBar[3], *maxBar[3];
 	ALLEGRO_FONT *font18;
 	ALLEGRO_COLOR color;
 	ALLEGRO_COLOR map_hsv(float hue, float sat, float var);
