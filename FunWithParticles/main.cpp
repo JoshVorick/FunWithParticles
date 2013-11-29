@@ -19,8 +19,8 @@ enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BA
 const int NUM_BUTTONS = 24; //number of buttons
 
 const int FPS = 120; //FPS of game
-const int width = 800; //Screen width
-const int height = 800; //Screen height
+const int width = 1280; //Screen width
+const int height = 720; //Screen height
 
 void processButtonClick(Button *button, int i); //Does stuff based on which button was clicked
 void createNewParticle(struct particle *newParticle); //Creates a non-spark, non-flame particle
@@ -30,7 +30,7 @@ void updateAsBall(struct particle *theParticle); //Updates non-spark, non-flame 
 void updateAsSpark(struct particle *theParticle); //Updates sparks (All particles, not just trailing ones)
 void updateAsBunsen(struct particle *flame); //Updates flame particles
 void processBlackHoleGravity(struct particle *theParticle, struct particle *theBlackHole); //Changes theParticle's vx and vy based on where blackHole is
-void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonColor); //draws the text and fills in selected buttons
+void drawText(ALLEGRO_FONT *font24, ALLEGRO_FONT *font16, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonColor); //draws the text and fills in selected buttons
 
 struct particle{
 	ALLEGRO_COLOR color;
@@ -54,6 +54,7 @@ bool isShowing[NUM_BUTTONS]; //Used to hide some buttons from screen when using 
 bool showButtons = true; //Used to hide all buttons
 ColorGenerator *colorGen; //Generates colors for the particles
 bool showColors = true; //Used to hide color sliders (held in ColorGenerator class)
+float vMin[2], vMax[2]; //Lowest and highest possible values for the velocity sliders
 
 int main(void){
 	vector<struct particle> liveParticles; //Holds all non-blackhole particles
@@ -67,11 +68,12 @@ int main(void){
 	bool isUsingButton; //If a player is using ANY button/slider, no new particles are created
 	bool saveNewBackground = false; //Used to save background when player presses 'S'
 	Button *buttons[NUM_BUTTONS]; //Array of buttons
+	SliderBar *vSlideMin[2], *vSlideMax[2]; //Minimum and Maximum vx and vy sliders
 
 	ALLEGRO_DISPLAY *display;
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER *timer;
-	ALLEGRO_FONT *font24;
+	ALLEGRO_FONT *font16, *font24;
 	ALLEGRO_COLOR textcolor; //Text color
 	ALLEGRO_COLOR button1, button2, button3;
 	ALLEGRO_BITMAP *background;
@@ -93,6 +95,7 @@ int main(void){
 	al_init_ttf_addon();
 
 	//Initialize ALLEGRO variables
+	font16 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 16, 0);
 	font24 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 24, 0);
 	textcolor = al_map_rgb(50,250,50);
 	button1 = al_map_rgb(200,0,100);
@@ -120,16 +123,23 @@ int main(void){
 	buttons[SELECT_BUNSEN] = new Button(width-30,225,20,20,button1,button2,button3);
 	buttons[EXPLOSIVE_UP] = new Button(15,75,20,20,button1,button2,button3);
 	buttons[EXPLOSIVE_DOWN] = new Button(50,75,20,20,button1,button2,button3);
-	buttons[PART_PER_TICK_UP] = new Button(15,105,20,20,button1,button2,button3);
-	buttons[PART_PER_TICK_DOWN] = new Button(50,105,20,20,button1,button2,button3);
-	buttons[SPARK_TRAIL_UP] = new Button(15,135,20,20,button1,button2,button3);
-	buttons[SPARK_TRAIL_DOWN] = new Button(50,135,20,20,button1,button2,button3);
-	buttons[PARTICLE_NUMBER_UP] = new Button(15,165,20,20,button1,button2,button3);
-	buttons[PARTICLE_NUMBER_DOWN] = new Button(50,165,20,20,button1,button2,button3);
-	buttons[RADIUS_UP] = new Button(15,195,20,20,button1,button2,button3);
-	buttons[RADIUS_DOWN] = new Button(50,195,20,20,button1,button2,button3);
+	buttons[PART_PER_TICK_UP] = new Button(15,145,20,20,button1,button2,button3);
+	buttons[PART_PER_TICK_DOWN] = new Button(50,145,20,20,button1,button2,button3);
+	buttons[SPARK_TRAIL_UP] = new Button(15,175,20,20,button1,button2,button3);
+	buttons[SPARK_TRAIL_DOWN] = new Button(50,175,20,20,button1,button2,button3);
+	buttons[PARTICLE_NUMBER_UP] = new Button(15,205,20,20,button1,button2,button3);
+	buttons[PARTICLE_NUMBER_DOWN] = new Button(50,205,20,20,button1,button2,button3);
+	buttons[RADIUS_UP] = new Button(15,235,20,20,button1,button2,button3);
+	buttons[RADIUS_DOWN] = new Button(50,235,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,button1,button2,button3);
+	
+	for(int i=0; i<2; i++){
+		vMin[i] = 0;
+		vMax[i] = 0.999;
+		vSlideMin[i] = new SliderBar(15+(120*i),120, 100, al_map_rgb(200,200,200), vMin[0], vMax[0], vMin[0]);
+		vSlideMax[i] = new SliderBar(15+(120*i),105, 100, al_map_rgb(200,200,200), vMin[0], vMax[0], 1);
+	}
 
 	//Set all buttons to be showing
 	for(int i=0; i<NUM_BUTTONS; i++)
@@ -196,7 +206,7 @@ int main(void){
 				if(colorGen->processMouseCoor(mouseX, mouseY, mouseDown)) //True if slider is being moved
 					isUsingButton = true; //If a slider is being used, sets this to true
 
-			if(showButtons)
+			if(showButtons){
 				for(int i=0; i<NUM_BUTTONS; i++){
 					if(buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown)){ //True if button is clicked
 						if(buttons[i]->isBeingHeld())
@@ -204,6 +214,24 @@ int main(void){
 						isUsingButton = true; 
 					}
 				}
+				for(int i=0; i<2; i++){
+					if(vSlideMin[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
+						if(vSlideMin[i]->getLocation() > vMax[i])
+							vSlideMin[i]->setLocation(vMax[i]);
+						vMin[i] = vSlideMin[i]->getLocation();
+						vSlideMax[i]->setMin(vMin[i]);
+						isUsingButton = true;
+						break;
+					}if(vSlideMax[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
+						if(vSlideMax[i]->getLocation() < vMin[i])
+							vSlideMax[i]->setLocation(vMin[i]);
+						vMax[i] = vSlideMax[i]->getLocation();
+						vSlideMin[i]->setMax(vMax[i]);
+						isUsingButton = true;
+						break;
+					}
+				}
+			}
 				
 			//Trim array based on particle type and number of black holes to limit lag
 			if(particleType == SELECT_GRAVITY_BALL)
@@ -262,10 +290,10 @@ int main(void){
 							createNewSparkle(&liveParticles[i], &newSparkle);
 							liveParticles.push_back(newSparkle);
 						}
-						if(liveParticles[i].alive == false){
+						/*if(liveParticles[i].alive == false){
 							liveParticles.erase(liveParticles.begin()+i); //Remove dead flame
 							i--; //Subtract one so that the next element doesn't get skipped
-						}
+						}*/
 					}else if(particleType == SELECT_GRAVITY_BALL){
 						updateAsBall(&liveParticles[i]); //Updates like a ball
 						for(int j=i+1; j<liveParticles.size();j++){
@@ -455,12 +483,15 @@ int main(void){
 				for(int i=0; i<NUM_BUTTONS; i++){
 					if(isShowing[i])
 						buttons[i]->draw();
+				}for(int i=0; i<2; i++){
+					vSlideMin[i]->draw();
+					vSlideMax[i]->draw();
 				}
 
 			if(showColors)
 				colorGen->draw();
 			if(showButtons)
-				drawText(font24, textcolor, button3);
+				drawText(font24, font16, textcolor, button3);
 			
 			al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", liveParticles.size());
 			al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", vblackHoles.size());
@@ -588,8 +619,8 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->x = mouseX; 
 	newParticle->y = mouseY;
 	newParticle->size = radius;
-	newParticle->vx = ((rand()%FPS)/(float)FPS - 0.5)*explosiveness;
-	newParticle->vy = ((rand()%FPS)/(float)FPS - 0.5)*explosiveness;
+	newParticle->vx = ((rand()%500/500.0)*(vMax[0] - vMin[0]) + vMin[0] - 0.5) * explosiveness;
+	newParticle->vy = ((rand()%500/500.0)*(vMax[1] - vMin[1]) + vMin[1] - 0.5) * explosiveness;
 	newParticle->color = colorGen->getNextColor();
 	newParticle->alive = true;
 };
@@ -637,19 +668,19 @@ void updateAsBall(struct particle *theParticle){
 	theParticle->y += theParticle->vy;
 	theParticle->vy += gravity/FPS;
 	
-	if(theParticle->x + radius > width || theParticle->x - radius < 0){
+	if(theParticle->x + theParticle->size > width || theParticle->x - theParticle->size < 0){
 		theParticle->vx *= co_of_restitution;
-		if(theParticle->x < radius)
-			theParticle->x = radius;
+		if(theParticle->x < theParticle->size)
+			theParticle->x = theParticle->size;
 		else
-			theParticle->x = width - radius;
+			theParticle->x = width - theParticle->size;
 	}
-	if(theParticle->y + radius > height || theParticle->y - radius < 0){
+	if(theParticle->y + theParticle->size > height || theParticle->y - theParticle->size < 0){
 		theParticle->vy *= co_of_restitution;
-		if(theParticle->y + radius > height)
-			theParticle->y = height - radius;
+		if(theParticle->y + theParticle->size > height)
+			theParticle->y = height - theParticle->size;
 		else
-			theParticle->y = radius;
+			theParticle->y = theParticle->size;
 	}
 };
 
@@ -713,13 +744,6 @@ void updateAsBunsen(struct particle *flame){
 	if(flame->age == 0 && flame->vy > -4.9){
 		int rg = 150-(flame->vy - 0.01)*-30;
 		flame->color = al_map_rgb(rg/3, rg/3, 125);
-	}else{
-		if(flame->age == bunsenRadius){}
-		else if(flame->age > bunsenRadius){
-			flame->vx -= (2*bunsenRadius-flame->age)*0.00005;
-		}else{
-			flame->vx +=  (flame->age) * 0.00005;
-		}
 	}
 };
 
@@ -733,7 +757,7 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
 
 };
 
-void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonColor){
+void drawText(ALLEGRO_FONT *font24,ALLEGRO_FONT *font16, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonColor){
 	if(isShowing[CO_OF_REST_UP]){
 		al_draw_textf(font24, color, 75, 15, 0, "Coefficient of Restitution: %f", co_of_restitution * -1);
 		al_draw_text(font24, color, 20, 15, 0, "+  -");
@@ -743,18 +767,24 @@ void drawText(ALLEGRO_FONT *font24, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonCol
 	}if(isShowing[EXPLOSIVE_UP]){
 		al_draw_textf(font24, color, 75, 75, 0, "Explosiveness: %f", explosiveness);
 		al_draw_text(font24, color, 20, 75, 0, "+  -");
+		al_draw_text(font24, color, 55, 115, 0, "vx");
+		al_draw_text(font24, color, 175, 115, 0, "vy");
+		al_draw_text(font16, color, 65, 105, ALLEGRO_ALIGN_CENTRE, "left   right");
+		al_draw_text(font16, color, 185, 105, ALLEGRO_ALIGN_CENTRE, " up   down");
+		al_draw_line(65, 105, 65, 120, al_map_rgb(200,200,200), 2);
+		al_draw_line(185, 105, 185, 120, al_map_rgb(200,200,200), 2);
 	}if(isShowing[PART_PER_TICK_UP]){
-		al_draw_textf(font24, color, 75, 105, 0, "Particles Per Tick: %i", particlesPerTick);
-		al_draw_text(font24, color, 20, 105, 0, "+  -");
+		al_draw_textf(font24, color, 75, 145, 0, "Particles Per Tick: %i", particlesPerTick);
+		al_draw_text(font24, color, 20, 145, 0, "+  -");
 	}if(isShowing[SPARK_TRAIL_UP]){
-		al_draw_textf(font24, color, 75, 135, 0, "Spark Trail: %f", 1.0/sparkliness);
-		al_draw_text(font24, color, 20, 135, 0, "+  -");
+		al_draw_textf(font24, color, 75, 175, 0, "Spark Trail: %f", 1.0/sparkliness);
+		al_draw_text(font24, color, 20, 175, 0, "+  -");
 	}if(isShowing[PARTICLE_NUMBER_UP]){
-		al_draw_textf(font24, color, 75, 165, 0, "# Particles: %i", particleNumber);
-		al_draw_text(font24, color, 20, 165, 0, "+  -");
+		al_draw_textf(font24, color, 75, 205, 0, "# Particles: %i", particleNumber);
+		al_draw_text(font24, color, 20, 205, 0, "+  -");
 	}if(isShowing[RADIUS_UP]){
-		al_draw_textf(font24, color, 75, 195, 0, "Radius: %i", radius);
-		al_draw_text(font24, color, 20, 195, 0, "+  -");
+		al_draw_textf(font24, color, 75, 235, 0, "Radius: %i", radius);
+		al_draw_text(font24, color, 20, 235, 0, "+  -");
 	}if(true){
 		al_draw_text(font24, color, width-40, 15, ALLEGRO_ALIGN_RIGHT, "Ball");
 		al_draw_text(font24, color, width-40, 45, ALLEGRO_ALIGN_RIGHT, "Spark");
