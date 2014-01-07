@@ -34,7 +34,7 @@ void drawText(ALLEGRO_FONT *font24, ALLEGRO_FONT *font16, ALLEGRO_COLOR color, A
 
 struct particle{
 	ALLEGRO_COLOR color;
-	float size, x, y, vx, vy, age;
+	float size, x, y, vx, vy, age, mass;
 	bool alive;
 	struct particle* nextParticle; //To create linked list of particles
 };
@@ -669,6 +669,7 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->x = mouseX; 
 	newParticle->y = mouseY;
 	newParticle->size = radius;
+	newParticle->mass = newParticle->size * newParticle->size;
 	newParticle->vx = ((rand()%500/500.0)*(vMax[0] - vMin[0]) + vMin[0] - 0.5) * explosiveness;
 	newParticle->vy = ((rand()%500/500.0)*(vMax[1] - vMin[1]) + vMin[1] - 0.5) * explosiveness;
 	newParticle->color = colorGen->getNextColor();
@@ -681,6 +682,7 @@ void createNewSparkle(struct particle *spark, struct particle *sparkle){
 	sparkle->x = spark->x + (rand()%4 - 2); 
 	sparkle->y = spark->y + (rand()%4 - 2);
 	sparkle->size = radius/2;
+	sparkle->mass = sparkle->size * sparkle->size;
 	sparkle->vx = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
 	sparkle->vy = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
 	sparkle->color = spark->color;
@@ -804,9 +806,11 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
     double deltaX = (theParticle->x - theBlackHole->x);
     double deltaY = (theParticle->y - theBlackHole->y);
 	float angle = atan2(deltaY,deltaX);
-	double dist = 1+(int)abs(((int)theParticle->x - (int)theBlackHole->x)^2 + ((int)theParticle->y - (int)theBlackHole->y)^2);
-    theParticle->vx += (-6 * cos(angle)/FPS);// / dist;
-    theParticle->vy += (-6 * sin(angle)/FPS);// / dist;
+	double dx = theParticle->x - theBlackHole->x;
+	double dy = theParticle->y - theBlackHole->y;
+	double dist_squared = abs(dx*dx + dy*dy) + theParticle->size + theBlackHole->size;
+	theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(100 + FPS*dist_squared);
+    theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*dist_squared);
 
 };
 
