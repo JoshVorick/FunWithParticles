@@ -19,8 +19,8 @@ enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BA
 const int NUM_BUTTONS = 24; //number of buttons
 
 const int FPS = 120; //FPS of game
-const int width = 1280; //Screen width
-const int height = 720; //Screen height
+const int width = 1900; //Screen width
+const int height = 1000; //Screen height
 
 void processButtonClick(Button *button, int i); //Does stuff based on which button was clicked
 void createNewParticle(struct particle *newParticle); //Creates a non-spark, non-flame particle
@@ -36,7 +36,9 @@ struct particle{
 	ALLEGRO_COLOR color;
 	float size, x, y, vx, vy, age;
 	bool alive;
+	struct particle* nextParticle; //To create linked list of particles
 };
+
 int gameTime = 0;
 float co_of_restitution = -0.85; //bounciness
 float gravity = 9.8; //downward acceleration
@@ -47,7 +49,7 @@ int particleType = SELECT_BALL; //which type the particle is (buttons on top rig
 int particleShape = SELECT_SHAPE_CIRCLE; //What shape particles are drawn as (buttons on bottom left)
 int particlesPerTick = 1; //How many particles to add per tick (1/FPS of a second)
 int sparkliness = 5; //Density of Spark's trail
-int particleNumber = 10; //Affects maximum size of vector<struct particle> liveParticles
+int maxNumOfParticles = 10; //Affects maximum size of vector<struct particle> liveParticles
 int radius = 5; //Radius of particles when drawn
 int bunsenRadius = 40; //Width of bottom of flame
 bool isShowing[NUM_BUTTONS]; //Used to hide some buttons from screen when using different particle types
@@ -57,8 +59,10 @@ bool showColors = true; //Used to hide color sliders (held in ColorGenerator cla
 float vMin[2], vMax[2]; //Lowest and highest possible values for the velocity sliders
 
 int main(void){
-	vector<struct particle> liveParticles; //Holds all non-blackhole particles
-	vector<struct particle> vblackHoles; //Holds black holes
+	struct particle* firstParticle = NULL; //Points to first particle in linked list of all particles
+	struct particle* firstBlackHole = NULL; //Points to first black hole in linked list of all black holes
+	int numParticles = 0;
+	int numBlackHoles = 0;
 
 	int curSparkle = 0; //Used with sparkliness to change density of spark trail
 	bool mouseDown = false; //Is left click held down
@@ -133,7 +137,7 @@ int main(void){
 	buttons[RADIUS_DOWN] = new Button(50,235,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,button1,button2,button3);
-	
+
 	for(int i=0; i<2; i++){
 		vMin[i] = 0;
 		vMax[i] = 0.999;
@@ -234,78 +238,122 @@ int main(void){
 			}
 				
 			//Trim array based on particle type and number of black holes to limit lag
-			if(particleType == SELECT_GRAVITY_BALL)
-				while(liveParticles.size() + vblackHoles.size() > 40 * particleNumber){
-					liveParticles.erase(liveParticles.begin());
+			/*if(firstParticle != NULL){
+				struct particle* curParticle;
+				if(particleType == SELECT_GRAVITY_BALL && numParticles > 40*maxNumOfParticles){
+					for(int i=0; i < 40*maxNumOfParticles; i++)
+						curParticle = curParticle->nextParticle;
+					curParticle->nextParticle = NULL;
+					numParticles = 40*maxNumOfParticles;
 				}
-			else if(particleType == SELECT_FIZZLE)
-				while(liveParticles.size()*(vblackHoles.size()+1) > 200 * particleNumber){
-					liveParticles.erase(liveParticles.begin());
+				else if(particleType == SELECT_FIZZLE && numParticles*(numBlackHoles+1) > 200*maxNumOfParticles){
+					for(int i=0; i < 200 * maxNumOfParticles / (numBlackHoles+1); i++)
+						curParticle = curParticle->nextParticle;
+					curParticle->nextParticle = NULL;
+					numParticles = 200 * maxNumOfParticles / (numBlackHoles+1);
 				}
-			else
-				while(liveParticles.size()*(vblackHoles.size()+1) > 3000 * particleNumber){
-					liveParticles.erase(liveParticles.begin());
+				else if(numParticles*(numBlackHoles+1) > 3000*maxNumOfParticles){
+					for(int i=0; i < 3000 * maxNumOfParticles / (numBlackHoles+1); i++)
+						curParticle = curParticle->nextParticle;
+					curParticle->nextParticle = NULL;
+					numParticles = 3000 * maxNumOfParticles / (numBlackHoles+1);
 				}
-			
+			}*/
+
 			//If mouse is clicked, and they're not using a button, and black hole isn't selected, create particles
 			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE){
 				for(int i=0; i<particlesPerTick; i++){ //Creates multiple particles per tick if needed
 					if(particleType == SELECT_BUNSEN){ //If type=flame, creates more particles
 						for(int i=0; i<30;i++){
-							struct particle newParticle;
-							createNewBunsen(&newParticle); //flame specific constructor
-							liveParticles.push_back(newParticle);
+							struct particle* newParticle = (struct particle*)malloc(sizeof(struct particle));
+							createNewBunsen(newParticle); //flame specific constructor
+							newParticle->nextParticle = firstParticle;
+							firstParticle = newParticle;
+							numParticles++;
 						}
 					}else{
-						struct particle newParticle;
-						createNewParticle(&newParticle);
-						liveParticles.push_back(newParticle);
+						struct particle* newParticle = (struct particle*)malloc(sizeof(struct particle));
+						createNewParticle(newParticle);
+						newParticle->nextParticle = firstParticle;
+						firstParticle = newParticle;
+						numParticles++;
 					}
 				}
 			}
 			//Update particles
 			if(particleType != SELECT_FROZEN){ //Don't update if FROZEN is selected
-				for(int i=0;i<liveParticles.size();i++){ //Iterates through all particles
-					for(int j=0;j<vblackHoles.size();j++){ //Iterate through black holes
-						processBlackHoleGravity(&liveParticles[i], &vblackHoles[j]); //update velocity based on position relative to black hole
+				struct particle* curParticle; //pointer to particle curently being updated
+				curParticle = firstParticle;
+				int iter = 0;
+				while(curParticle != NULL){
+					iter++;
+					struct particle* curBlackHole; //pointer to black hole curently being updated
+					curBlackHole = firstBlackHole;
+					while(curBlackHole != NULL){ //Iterate through black holes
+						processBlackHoleGravity(curParticle, curBlackHole); //update velocity based on position relative to black hole
 					}
 					if(particleType == SELECT_BALL)
-						updateAsBall(&liveParticles[i]); //Update as a ball
+						updateAsBall(curParticle); //Update as a ball
 					else if(particleType == SELECT_CIRCLES){
-						updateAsBall(&liveParticles[i]); //Update as a circle (same as ball)
-						liveParticles[i].size = height - liveParticles[i].y; //Change size so that bottom of circle is touching the floor
+						updateAsBall(curParticle); //Update as a circle (same as ball)
+						curParticle->size = height - curParticle->y; //Change size so that bottom of circle is touching the floor
 					}else if(particleType == SELECT_BUNSEN){
-						updateAsBunsen(&liveParticles[i]); //Update as flame
+						updateAsBunsen(curParticle); //Update as flame
 					}else if(particleType == SELECT_SPARK){
-						updateAsSpark(&liveParticles[i]); //Update as spark
-						if(liveParticles[i].size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
-							struct particle newSparkle;
-							createNewSparkle(&liveParticles[i], &newSparkle); //Create new trailing spark
-							liveParticles.push_back(newSparkle);
+						updateAsSpark(curParticle); //Update as spark
+						if(curParticle->size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
+							struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
+							createNewSparkle(curParticle, newSparkle); //Create new trailing spark
+							newSparkle->nextParticle = firstParticle;
+							firstParticle = newSparkle;
+							numParticles++;
 						}
 					}else if(particleType == SELECT_FIZZLE){ //Not really sure how it works... Ooops...
-						updateAsSpark(&liveParticles[i]);
-						if(i % sparkliness == 0){
-							struct particle newSparkle;
-							createNewSparkle(&liveParticles[i], &newSparkle);
-							liveParticles.push_back(newSparkle);
+						updateAsSpark(curParticle);
+						if(iter % sparkliness == 0){
+							struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
+							createNewSparkle(curParticle, newSparkle);
+							newSparkle->nextParticle = firstParticle;
+							firstParticle = newSparkle;
+							numParticles++;
 						}
-						/*if(liveParticles[i].alive == false){
-							liveParticles.erase(liveParticles.begin()+i); //Remove dead flame
-							i--; //Subtract one so that the next element doesn't get skipped
-						}*/
 					}else if(particleType == SELECT_GRAVITY_BALL){
-						updateAsBall(&liveParticles[i]); //Updates like a ball
-						for(int j=i+1; j<liveParticles.size();j++){
-							processBlackHoleGravity(&liveParticles[i],&liveParticles[j]); //Calculate direction i is pulled by j
-							processBlackHoleGravity(&liveParticles[j],&liveParticles[i]); //Calculate direction j is pulled by i
+						updateAsBall(curParticle); //Updates like a ball
+						struct particle* curOtherParticle = curParticle->nextParticle; //will iterate through all particles that occur later in the list
+						while(curOtherParticle != NULL){
+							processBlackHoleGravity(curParticle,curOtherParticle); //Calculate direction cur is pullled by other
+							processBlackHoleGravity(curOtherParticle,curParticle); //Calculate direction other is pulled by cur
+							curOtherParticle = curOtherParticle->nextParticle;
 						}
 					}
+					curParticle = curParticle->nextParticle;
 				}
 			}
-			liveParticles.erase(std::remove_if (liveParticles.begin(), liveParticles.end(), [](const particle p) {return p.alive != true;}), liveParticles.end());
 
-			curSparkle = (curSparkle + 1) % sparkliness; //Lower sparkliness means  curSparkle will be 0 more often, meaning more sparkles will be created
+			//Delete dead particles
+			while(firstParticle != NULL && !firstParticle->alive){
+				struct particle* temp = firstParticle;
+				numParticles -= 1;
+				firstParticle = firstParticle->nextParticle;
+				free(temp);
+			}
+			struct particle* curParticle;
+			curParticle = firstParticle;
+			struct particle* prevParticle;
+			while(curParticle != NULL){
+				if(curParticle->alive == false){ 
+					struct particle* temp = curParticle;
+					numParticles -= 1;
+					curParticle = curParticle->nextParticle;
+					prevParticle->nextParticle = curParticle;
+					free(temp);
+				}else{
+					prevParticle = curParticle;
+					curParticle = curParticle->nextParticle;
+				}
+			}
+
+			curSparkle = (curSparkle + 1) % sparkliness; //Lower sparkliness means curSparkle will be 0 more often, meaning more sparkles will be created
 
 			//Delete all timer events that piled up, so that timer events don't jam the queue and mouse movements can be processed (and screen can be redrawn)
 			ALLEGRO_EVENT ev2;
@@ -341,16 +389,22 @@ int main(void){
 			}
 			if(!isUsingButton){
 				if(particleType != SELECT_BLACKHOLE){
-					struct particle newParticle;
+					struct particle* newParticle = (struct particle*)malloc(sizeof(struct particle));
 					if(particleType == SELECT_BUNSEN)
-						createNewBunsen(&newParticle);
+						createNewBunsen(newParticle);
 					else
-						createNewParticle(&newParticle);
-					liveParticles.push_back(newParticle);
+						createNewParticle(newParticle);
+
+					newParticle->nextParticle = firstParticle;
+					firstParticle = newParticle;
+					numParticles++;
 				}else{
-					struct particle newblackHole;
-					createNewParticle(&newblackHole);
-					vblackHoles.push_back(newblackHole);
+					struct particle* newBlackHole = (struct particle*)malloc(sizeof(struct particle));
+					createNewParticle(newBlackHole);
+
+					newBlackHole->nextParticle = firstBlackHole;
+					firstBlackHole = newBlackHole;
+					numParticles++;
 				}
 			}
 			break;
@@ -421,12 +475,16 @@ int main(void){
 					buttons[i]->setNewColors(button1, button2, button3);
 				break;
 			case ALLEGRO_KEY_X:
-				for(int i=0; i<liveParticles.size(); i++){
-					liveParticles.clear();
+				struct particle* curParticle = firstParticle;
+				while(curParticle != NULL){
+					struct particle* temp = curParticle->nextParticle;
+					free(curParticle);
+					curParticle = temp;
 				}
-				for(int i=0; i<vblackHoles.size(); i++){
-					vblackHoles.clear();
-				}
+				firstParticle = NULL;
+				firstBlackHole = NULL;
+				numParticles = 0;
+				numBlackHoles = 0;
 				break;
 			}
 			break;
@@ -445,36 +503,28 @@ int main(void){
 				al_clear_to_color(al_map_rgb(0,0,0));
 			}
 
-			for(int i=0; i<vblackHoles.size(); i++){
-				al_draw_filled_circle(vblackHoles[i].x, vblackHoles[i].y, vblackHoles[i].size, al_map_rgb(255, 255, 255));
+			struct particle* curParticle;
+
+			curParticle = firstBlackHole;
+			while(curParticle != NULL){
+				al_draw_filled_circle(curParticle->x, curParticle->y, curParticle->size, al_map_rgb(255, 255, 255));
+				curParticle = curParticle->nextParticle;
 			}
-			if(particleType == SELECT_BUNSEN){
-				if(particleShape == SELECT_SHAPE_CIRCLE){
-					for(int i=0; i<liveParticles.size(); i++)
-						if(liveParticles[i].age != 0)
-							al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size-1, liveParticles[i].color);
-					for(int i=0; i<liveParticles.size(); i++)
-						if(liveParticles[i].age == 0)
-							al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size-1, liveParticles[i].color);
-				}else{
-					for(int i=0; i<liveParticles.size(); i++)
-						if(liveParticles[i].age != 0)
-							al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
-								liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
-					for(int i=0; i<liveParticles.size(); i++)
-						if(liveParticles[i].age == 0)
-							al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
-								liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
+
+			curParticle = firstParticle;
+			if(particleShape == SELECT_SHAPE_CIRCLE){
+				while(curParticle != NULL){
+					al_draw_filled_circle(curParticle->x, curParticle->y, curParticle->size, curParticle->color);
+					curParticle = curParticle->nextParticle;
 				}
 			}else{
-				if(particleShape == SELECT_SHAPE_CIRCLE)
-					for(int i=0; i<liveParticles.size(); i++)
-						al_draw_filled_circle(liveParticles[i].x, liveParticles[i].y, liveParticles[i].size, liveParticles[i].color);
-				else
-					for(int i=0; i<liveParticles.size(); i++)
-						al_draw_filled_rectangle(liveParticles[i].x-liveParticles[i].size, liveParticles[i].y-liveParticles[i].size, 
-								liveParticles[i].size+liveParticles[i].x, liveParticles[i].size+liveParticles[i].y, liveParticles[i].color);
+				while(curParticle != NULL){
+					al_draw_filled_rectangle(curParticle->x-curParticle->size, curParticle->y-curParticle->size, 
+						curParticle->size+curParticle->x, curParticle->size+curParticle->y, curParticle->color);
+					curParticle = curParticle->nextParticle;
+				}
 			}
+
 			if(saveNewBackground){
 				al_set_target_bitmap(al_get_backbuffer(display));
 				saveNewBackground = false;
@@ -493,8 +543,8 @@ int main(void){
 			if(showButtons)
 				drawText(font24, font16, textcolor, button3);
 			
-			al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", liveParticles.size());
-			al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", vblackHoles.size());
+			al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", numParticles);
+			al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", numBlackHoles);
 
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
@@ -586,14 +636,14 @@ void processButtonClick(Button *button, int i){
 			sparkliness = 25;
 		break;
 	case PARTICLE_NUMBER_UP:
-		particleNumber += 1;
-		if(particleNumber > 30)
-			particleNumber = 30;
+		maxNumOfParticles += 1;
+		if(maxNumOfParticles > 30)
+			maxNumOfParticles = 30;
 		break;
 	case PARTICLE_NUMBER_DOWN:
-		particleNumber -= 1;
-		if(particleNumber < 0)
-			particleNumber = 0;
+		maxNumOfParticles -= 1;
+		if(maxNumOfParticles < 0)
+			maxNumOfParticles = 0;
 		break;
 	case RADIUS_UP:
 		radius += 1;
@@ -602,8 +652,8 @@ void processButtonClick(Button *button, int i){
 		break;
 	case RADIUS_DOWN:
 		radius -= 1;
-		if(radius < 2)
-			radius = 2;
+		if(radius < 1)
+			radius = 1;
 		break;
 	case SELECT_SHAPE_CIRCLE:
 		particleShape = SELECT_SHAPE_CIRCLE;
@@ -623,6 +673,7 @@ void createNewParticle(struct particle *newParticle){
 	newParticle->vy = ((rand()%500/500.0)*(vMax[1] - vMin[1]) + vMin[1] - 0.5) * explosiveness;
 	newParticle->color = colorGen->getNextColor();
 	newParticle->alive = true;
+	newParticle->nextParticle = NULL;
 };
 
 void createNewSparkle(struct particle *spark, struct particle *sparkle){
@@ -634,6 +685,7 @@ void createNewSparkle(struct particle *spark, struct particle *sparkle){
 	sparkle->vy = ((rand()%((int)(0.6*FPS)))/FPS - 0.3);
 	sparkle->color = spark->color;
 	sparkle->alive = true;
+	sparkle->nextParticle = NULL;
 };
 
 void createNewBunsen(struct particle *newFlame){
@@ -643,6 +695,7 @@ void createNewBunsen(struct particle *newFlame){
 	newFlame->size = radius;
 	newFlame->color = al_map_rgb(5,5,80);
 	newFlame->alive = true;
+	newFlame->nextParticle = NULL;
 
 	if(d>bunsenRadius)
 		newFlame->vy = (bunsenRadius*2-d)*-0.1;
@@ -780,7 +833,7 @@ void drawText(ALLEGRO_FONT *font24,ALLEGRO_FONT *font16, ALLEGRO_COLOR color, AL
 		al_draw_textf(font24, color, 75, 175, 0, "Spark Trail: %f", 1.0/sparkliness);
 		al_draw_text(font24, color, 20, 175, 0, "+  -");
 	}if(isShowing[PARTICLE_NUMBER_UP]){
-		al_draw_textf(font24, color, 75, 205, 0, "# Particles: %i", particleNumber);
+		al_draw_textf(font24, color, 75, 205, 0, "# Particles: %i", maxNumOfParticles);
 		al_draw_text(font24, color, 20, 205, 0, "+  -");
 	}if(isShowing[RADIUS_UP]){
 		al_draw_textf(font24, color, 75, 235, 0, "Radius: %i", radius);
