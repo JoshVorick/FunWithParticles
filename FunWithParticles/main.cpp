@@ -19,8 +19,8 @@ enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BA
 const int NUM_BUTTONS = 24; //number of buttons
 
 const int FPS = 120; //FPS of game
-const int width = 1900; //Screen width
-const int height = 1000; //Screen height
+const int width = 1080; //Screen width
+const int height = 1800; //Screen height
 
 void processButtonClick(Button *button, int i); //Does stuff based on which button was clicked
 void createNewParticle(struct particle *newParticle); //Creates a non-spark, non-flame particle
@@ -88,7 +88,7 @@ int main(void){
 	//al_set_new_display_flags(ALLEGRO_RESIZABLE);
 	//al_set_new_display_flags(ALLEGRO_FULLSCREEN);
 	display = al_create_display(width, height);
-	al_set_window_position(display, 0, 0);
+	al_set_window_position(display, -1081, -400);
 	al_set_window_title(display, "Particle Simulator");
 
 	//Install addons. MUST be done BEFORE using the addons' functions. 
@@ -238,27 +238,36 @@ int main(void){
 			}
 				
 			//Trim array based on particle type and number of black holes to limit lag
-			/*if(firstParticle != NULL){
-				struct particle* curParticle;
+			if(firstParticle != NULL){
+				struct particle* curParticle = firstParticle;
 				if(particleType == SELECT_GRAVITY_BALL && numParticles > 40*maxNumOfParticles){
-					for(int i=0; i < 40*maxNumOfParticles; i++)
+					for(int i=0; i < 40*maxNumOfParticles; i++){
 						curParticle = curParticle->nextParticle;
-					curParticle->nextParticle = NULL;
-					numParticles = 40*maxNumOfParticles;
+					}
+					while(curParticle != NULL){
+						curParticle->alive = false;
+						curParticle = curParticle->nextParticle;
+					}
 				}
 				else if(particleType == SELECT_FIZZLE && numParticles*(numBlackHoles+1) > 200*maxNumOfParticles){
-					for(int i=0; i < 200 * maxNumOfParticles / (numBlackHoles+1); i++)
+					for(int i=0; i < 200 * maxNumOfParticles / (numBlackHoles+1); i++){
 						curParticle = curParticle->nextParticle;
-					curParticle->nextParticle = NULL;
-					numParticles = 200 * maxNumOfParticles / (numBlackHoles+1);
-				}
-				else if(numParticles*(numBlackHoles+1) > 3000*maxNumOfParticles){
-					for(int i=0; i < 3000 * maxNumOfParticles / (numBlackHoles+1); i++)
+					}
+					while(curParticle != NULL){
+						curParticle->alive = false;
 						curParticle = curParticle->nextParticle;
-					curParticle->nextParticle = NULL;
-					numParticles = 3000 * maxNumOfParticles / (numBlackHoles+1);
+					}
 				}
-			}*/
+				else if(numParticles > 3000 * maxNumOfParticles / (numBlackHoles+1)){
+					for(int i=0; i < 3000 * maxNumOfParticles / (numBlackHoles+1); i++){
+						curParticle = curParticle->nextParticle;
+					}
+					while(curParticle != NULL){
+						curParticle->alive = false;
+						curParticle = curParticle->nextParticle;
+					}
+				}
+			}
 
 			//If mouse is clicked, and they're not using a button, and black hole isn't selected, create particles
 			if(mouseDown && !isUsingButton && particleType != SELECT_BLACKHOLE){
@@ -642,8 +651,8 @@ void processButtonClick(Button *button, int i){
 		break;
 	case PARTICLE_NUMBER_DOWN:
 		maxNumOfParticles -= 1;
-		if(maxNumOfParticles < 0)
-			maxNumOfParticles = 0;
+		if(maxNumOfParticles < 1)
+			maxNumOfParticles = 1;
 		break;
 	case RADIUS_UP:
 		radius += 1;
@@ -809,8 +818,10 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
 	double dx = theParticle->x - theBlackHole->x;
 	double dy = theParticle->y - theBlackHole->y;
 	double dist_squared = abs(dx*dx + dy*dy) + theParticle->size + theBlackHole->size;
-	theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(100 + FPS*dist_squared);
+	theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*dist_squared);
     theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*dist_squared);
+	//theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*5000);
+    //theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*5000);
 
 };
 
