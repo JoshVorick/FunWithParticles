@@ -9,7 +9,7 @@ SliderBar::SliderBar(){
 	isHeld = false;
 }
 
-SliderBar::SliderBar(int x, int y, int width, ALLEGRO_COLOR color, int min, int max, int startPos){
+SliderBar::SliderBar(int x, int y, int width, ALLEGRO_COLOR color, int min, int max, float startPos){
 	this->min = min;
 	this->max = max;
 	sliderX = startPos;

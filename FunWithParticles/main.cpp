@@ -14,9 +14,9 @@ using namespace std;
 enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES, 
 	SELECT_FROZEN, SELECT_BLACKHOLE, SELECT_GRAVITY_BALL, SELECT_BUNSEN, 
 	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, 
-	PARTICLE_NUMBER_UP, PARTICLE_NUMBER_DOWN, RADIUS_UP, RADIUS_DOWN, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE}; //names of all the buttons
+	PARTICLE_NUMBER_UP, PARTICLE_NUMBER_DOWN, RADIUS_UP, RADIUS_DOWN, SELECT_REALISTIC_GRAVITY, SELECT_PRETTY_GRAVITY, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE}; //names of all the buttons
 
-const int NUM_BUTTONS = 24; //number of buttons
+const int NUM_BUTTONS = 26; //number of buttons
 
 const int FPS = 120; //FPS of game
 const int width = 1080; //Screen width
@@ -47,6 +47,7 @@ int mouseX = 0;
 int mouseY = 0;
 int particleType = SELECT_BALL; //which type the particle is (buttons on top right)
 int particleShape = SELECT_SHAPE_CIRCLE; //What shape particles are drawn as (buttons on bottom left)
+int gravityType = SELECT_PRETTY_GRAVITY;
 int particlesPerTick = 1; //How many particles to add per tick (1/FPS of a second)
 int sparkliness = 5; //Density of Spark's trail
 int maxNumOfParticles = 10; //Affects maximum size of vector<struct particle> liveParticles
@@ -135,6 +136,8 @@ int main(void){
 	buttons[PARTICLE_NUMBER_DOWN] = new Button(50,205,20,20,button1,button2,button3);
 	buttons[RADIUS_UP] = new Button(15,235,20,20,button1,button2,button3);
 	buttons[RADIUS_DOWN] = new Button(50,235,20,20,button1,button2,button3);
+	buttons[SELECT_REALISTIC_GRAVITY] = new Button(15,265,20,20,button1,button2,button3);
+	buttons[SELECT_PRETTY_GRAVITY] = new Button(15,295,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,button1,button2,button3);
 
@@ -659,10 +662,16 @@ void processButtonClick(Button *button, int i){
 		if(radius > 100)
 			radius = 100;
 		break;
-	case RADIUS_DOWN:
+	case RADIUS_DOWN: 
 		radius -= 1;
 		if(radius < 1)
 			radius = 1;
+		break;
+	case SELECT_REALISTIC_GRAVITY:
+		gravityType = SELECT_REALISTIC_GRAVITY;
+		break;
+	case SELECT_PRETTY_GRAVITY:
+		gravityType = SELECT_PRETTY_GRAVITY;
 		break;
 	case SELECT_SHAPE_CIRCLE:
 		particleShape = SELECT_SHAPE_CIRCLE;
@@ -815,14 +824,16 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
     double deltaX = (theParticle->x - theBlackHole->x);
     double deltaY = (theParticle->y - theBlackHole->y);
 	float angle = atan2(deltaY,deltaX);
-	double dx = theParticle->x - theBlackHole->x;
-	double dy = theParticle->y - theBlackHole->y;
-	double dist_squared = abs(dx*dx + dy*dy) + theParticle->size + theBlackHole->size;
-	theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*dist_squared);
-    theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*dist_squared);
-	//theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*5000);
-    //theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*5000);
-
+	if(gravityType == SELECT_REALISTIC_GRAVITY){
+		double dx = theParticle->x - theBlackHole->x;
+		double dy = theParticle->y - theBlackHole->y;
+		double dist_squared = abs(dx*dx + dy*dy) + theParticle->size + theBlackHole->size;
+		theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*dist_squared);
+		theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*dist_squared);
+	}else{
+		theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*10000);
+		theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*10000);
+	}
 };
 
 void drawText(ALLEGRO_FONT *font24,ALLEGRO_FONT *font16, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonColor){
@@ -862,9 +873,12 @@ void drawText(ALLEGRO_FONT *font24,ALLEGRO_FONT *font16, ALLEGRO_COLOR color, AL
 		al_draw_text(font24, color, width-40, 165, ALLEGRO_ALIGN_RIGHT, "Black Hole");
 		al_draw_text(font24, color, width-40, 195, ALLEGRO_ALIGN_RIGHT, "Gravity Ball");
 		al_draw_text(font24, color, width-40, 225, ALLEGRO_ALIGN_RIGHT, "Flame");
+		al_draw_text(font24, color, 50, 265, ALLEGRO_ALIGN_LEFT, "Realistic Gravity");
+		al_draw_text(font24, color, 50, 295, ALLEGRO_ALIGN_LEFT, "Pretty Gravity");
 		al_draw_text(font24, color, width-40, height-25, ALLEGRO_ALIGN_RIGHT, "Square");
 		al_draw_text(font24, color, width-40, height-55, ALLEGRO_ALIGN_RIGHT, "Circle");
 	}
 	al_draw_rectangle(width-24, (particleType-4)*30 + 20, width-16, (particleType-4)*30 + 29, buttonColor, 8);
 	al_draw_rectangle(width-24, (particleShape-NUM_BUTTONS)*30 + height+9, width-16, (particleShape-NUM_BUTTONS)*30 + height+18, buttonColor, 8);
+	al_draw_rectangle(19, (gravityType-NUM_BUTTONS)*30 + 389, 28, (gravityType-NUM_BUTTONS)*30 + 398, buttonColor, 8);
 };

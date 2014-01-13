@@ -7,11 +7,13 @@ ColorGenerator::ColorGenerator(){
 	h=0;
 	s=0.9;
 	v=0.9;
+	min[H] = 0;
+	min[S] = 0.6;
+	min[V] = 0.6;
 	for(int i=0; i<3; i++){
-		min[i] = 0;
 		max[i] = 0.999;
-		minBar[i] = new SliderBar(x, y+10+(40*i), 100, al_map_rgb(100,0,0), min[0], max[0], min[0]);
-		maxBar[i] = new SliderBar(x, y+20+(40*i), 100, al_map_rgb(100,0,0), min[0], max[0], 1);
+		minBar[i] = new SliderBar(x, y+10+(40*i), 100, al_map_rgb(100,0,0), 0, 1, min[i]);
+		maxBar[i] = new SliderBar(x, y+20+(40*i), 100, al_map_rgb(100,0,0), 0, 1, max[i]);
 	}
 	font18 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 18, 0);
 }
@@ -23,11 +25,13 @@ ColorGenerator::ColorGenerator(int x, int y, ALLEGRO_COLOR color){
 	h=0;
 	s=0.9;
 	v=0.9;
+	min[H] = 0;
+	min[S] = 0.6;
+	min[V] = 0.6;
 	for(int i=0; i<3; i++){
-		min[i] = 0;
 		max[i] = 0.999;
-		minBar[i] = new SliderBar(x, y+10+(40*i), 100, color, min[0], max[0], min[0]);
-		maxBar[i] = new SliderBar(x, y+20+(40*i), 100, color, min[0], max[0], 1);
+		minBar[i] = new SliderBar(x, y+10+(40*i), 100, color, 0, 1, min[i]);
+		maxBar[i] = new SliderBar(x, y+20+(40*i), 100, color, 0, 1, max[i]);
 	}
 	font18 = al_load_font("Fonts/A_Sensible_Armadillo.ttf", 18, 0);
 }

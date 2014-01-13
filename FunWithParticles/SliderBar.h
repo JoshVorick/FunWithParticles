@@ -10,7 +10,7 @@ private:
 
 public:
 	SliderBar();
-	SliderBar(int x, int y, int width, ALLEGRO_COLOR color, int min, int max, int startPos);
+	SliderBar(int x, int y, int width, ALLEGRO_COLOR color, int min, int max, float startPos);
 
 	bool processMouseCoor(int mouseX, int mouseY, bool isDown); //return true if being moved
 	float getLocation(){return sliderX;} 
