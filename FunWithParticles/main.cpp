@@ -303,6 +303,7 @@ int main(void){
 					curBlackHole = firstBlackHole;
 					while(curBlackHole != NULL){ //Iterate through black holes
 						processBlackHoleGravity(curParticle, curBlackHole); //update velocity based on position relative to black hole
+						curBlackHole = curBlackHole->nextParticle;
 					}
 					if(particleType == SELECT_BALL)
 						updateAsBall(curParticle); //Update as a ball
@@ -416,7 +417,7 @@ int main(void){
 
 					newBlackHole->nextParticle = firstBlackHole;
 					firstBlackHole = newBlackHole;
-					numParticles++;
+					numBlackHoles++;
 				}
 			}
 			break;
@@ -488,6 +489,12 @@ int main(void){
 				break;
 			case ALLEGRO_KEY_X:
 				struct particle* curParticle = firstParticle;
+				while(curParticle != NULL){
+					struct particle* temp = curParticle->nextParticle;
+					free(curParticle);
+					curParticle = temp;
+				}
+				curParticle = firstBlackHole;
 				while(curParticle != NULL){
 					struct particle* temp = curParticle->nextParticle;
 					free(curParticle);
