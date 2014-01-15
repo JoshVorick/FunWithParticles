@@ -6,8 +6,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "Button.h"
-#include "ColorGenerator.h"
+#include "Button.cpp"
+#include "ColorGenerator.cpp"
 
 using namespace std;
 
@@ -19,13 +19,14 @@ enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BA
 const int NUM_BUTTONS = 26; //number of buttons
 
 const int FPS = 120; //FPS of game
-const int width = 1080; //Screen width
-const int height = 1800; //Screen height
+const int width = 800; //Screen width
+const int height = 600; //Screen height
 
 void processButtonClick(Button *button, int i); //Does stuff based on which button was clicked
 void createNewParticle(struct particle *newParticle); //Creates a non-spark, non-flame particle
 void createNewSparkle(struct particle *spark, struct particle *sparkle); //Creates a spark (the little trailing spark)
 void createNewBunsen(struct particle *newFlame); //Creates a flame particle
+struct particle* insertNewParticleBySize(struct particle *firstOne, struct particle* newOne);
 void updateAsBall(struct particle *theParticle); //Updates non-spark, non-flame particles
 void updateAsSpark(struct particle *theParticle); //Updates sparks (All particles, not just trailing ones)
 void updateAsBunsen(struct particle *flame); //Updates flame particles
@@ -89,7 +90,7 @@ int main(void){
 	//al_set_new_display_flags(ALLEGRO_RESIZABLE);
 	//al_set_new_display_flags(ALLEGRO_FULLSCREEN);
 	display = al_create_display(width, height);
-	al_set_window_position(display, -1081, -400);
+	al_set_window_position(display, 0, 0);
 	al_set_window_title(display, "Particle Simulator");
 
 	//Install addons. MUST be done BEFORE using the addons' functions. 
@@ -279,15 +280,13 @@ int main(void){
 						for(int i=0; i<30;i++){
 							struct particle* newParticle = (struct particle*)malloc(sizeof(struct particle));
 							createNewBunsen(newParticle); //flame specific constructor
-							newParticle->nextParticle = firstParticle;
-							firstParticle = newParticle;
+							firstParticle = insertNewParticleBySize(firstParticle, newParticle);
 							numParticles++;
 						}
 					}else{
 						struct particle* newParticle = (struct particle*)malloc(sizeof(struct particle));
 						createNewParticle(newParticle);
-						newParticle->nextParticle = firstParticle;
-						firstParticle = newParticle;
+						firstParticle = insertNewParticleBySize(firstParticle, newParticle);
 						numParticles++;
 					}
 				}
@@ -317,8 +316,7 @@ int main(void){
 						if(curParticle->size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
 							struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
 							createNewSparkle(curParticle, newSparkle); //Create new trailing spark
-							newSparkle->nextParticle = firstParticle;
-							firstParticle = newSparkle;
+							firstParticle = insertNewParticleBySize(firstParticle, newSparkle);
 							numParticles++;
 						}
 					}else if(particleType == SELECT_FIZZLE){ //Not really sure how it works... Ooops...
@@ -326,8 +324,7 @@ int main(void){
 						if(iter % sparkliness == 0){
 							struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
 							createNewSparkle(curParticle, newSparkle);
-							newSparkle->nextParticle = firstParticle;
-							firstParticle = newSparkle;
+							firstParticle = insertNewParticleBySize(firstParticle, newSparkle);
 							numParticles++;
 						}
 					}else if(particleType == SELECT_GRAVITY_BALL){
@@ -407,16 +404,13 @@ int main(void){
 						createNewBunsen(newParticle);
 					else
 						createNewParticle(newParticle);
-
-					newParticle->nextParticle = firstParticle;
-					firstParticle = newParticle;
+					
+					firstParticle = insertNewParticleBySize(firstParticle, newParticle);
 					numParticles++;
 				}else{
 					struct particle* newBlackHole = (struct particle*)malloc(sizeof(struct particle));
 					createNewParticle(newBlackHole);
-
-					newBlackHole->nextParticle = firstBlackHole;
-					firstBlackHole = newBlackHole;
+					firstBlackHole = insertNewParticleBySize(firstBlackHole, newBlackHole);
 					numBlackHoles++;
 				}
 			}
@@ -743,6 +737,34 @@ void createNewBunsen(struct particle *newFlame){
 	}
 };
 
+struct particle* insertNewParticleBySize(struct particle *firstOne, struct particle* newOne){
+	if(firstOne == NULL){
+		return newOne;
+	}else if(firstOne->nextParticle == NULL){
+		if(firstOne->size >= newOne->size){
+			firstOne->nextParticle = newOne;
+			//return temp;
+		}else{
+			firstOne->nextParticle = firstOne;
+			return newOne;
+		}
+	}else{
+		struct particle* smallerParticle = firstOne;
+		//iterate through smaller particles (linked list is sorted by size)
+		while(smallerParticle->nextParticle != NULL){
+			if(smallerParticle->size <= newOne->size){
+				newOne->nextParticle = smallerParticle->nextParticle;
+				smallerParticle->nextParticle = newOne;
+				break;
+			}else
+				smallerParticle = smallerParticle->nextParticle;
+		}
+		if(smallerParticle->nextParticle == NULL)
+			smallerParticle->nextParticle = newOne;
+	}
+	return firstOne;
+};
+
 void updateAsBall(struct particle *theParticle){
 	theParticle->x += theParticle->vx;
 	theParticle->y += theParticle->vy;
@@ -834,7 +856,7 @@ void processBlackHoleGravity(struct particle *theParticle, struct particle *theB
 	if(gravityType == SELECT_REALISTIC_GRAVITY){
 		double dx = theParticle->x - theBlackHole->x;
 		double dy = theParticle->y - theBlackHole->y;
-		double dist_squared = abs(dx*dx + dy*dy) + theParticle->size + theBlackHole->size;
+		double dist_squared = abs((long int)(dx*dx + dy*dy)) + theParticle->size + theBlackHole->size;
 		theParticle->vx -= 10*theBlackHole->mass * cos(angle)/(FPS*dist_squared);
 		theParticle->vy -= 10*theBlackHole-> mass * sin(angle)/(FPS*dist_squared);
 	}else{

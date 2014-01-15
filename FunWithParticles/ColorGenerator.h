@@ -4,7 +4,7 @@
 #include <allegro5\allegro_font.h>
 #include <allegro5\allegro_ttf.h>
 
-#include "SliderBar.h"
+#include "SliderBar.cpp"
 
 enum {H,S,V};
 
