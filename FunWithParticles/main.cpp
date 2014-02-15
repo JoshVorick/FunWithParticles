@@ -11,16 +11,17 @@
 
 using namespace std;
 
-enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES, 
-	SELECT_FROZEN, SELECT_BLACKHOLE, SELECT_GRAVITY_BALL, SELECT_BUNSEN, 
+#define FPS 120
+
+enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES,
+	SELECT_FROZEN, SELECT_BLACKHOLE, SELECT_GRAVITY_BALL, SELECT_BUNSEN, SELECT_SPIKES, 
 	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, 
-	PARTICLE_NUMBER_UP, PARTICLE_NUMBER_DOWN, RADIUS_UP, RADIUS_DOWN, SELECT_REALISTIC_GRAVITY, SELECT_PRETTY_GRAVITY, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE}; //names of all the buttons
+	PARTICLE_NUMBER_UP, PARTICLE_NUMBER_DOWN, RADIUS_UP, RADIUS_DOWN, SELECT_REALISTIC_GRAVITY, SELECT_PRETTY_GRAVITY, SELECT_DONT_ERASE, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE}; //names of all the buttons
 
-const int NUM_BUTTONS = 26; //number of buttons
+const int NUM_BUTTONS = 28; //number of buttons
 
-const int FPS = 120; //FPS of game
 const int width = 800; //Screen width
-const int height = 600; //Screen height
+const int height = 800; //Screen height
 
 void processButtonClick(Button *button, int i); //Does stuff based on which button was clicked
 void createNewParticle(struct particle *newParticle); //Creates a non-spark, non-flame particle
@@ -29,6 +30,7 @@ void createNewBunsen(struct particle *newFlame); //Creates a flame particle
 struct particle* insertNewParticleBySize(struct particle *firstOne, struct particle* newOne);
 void updateAsBall(struct particle *theParticle); //Updates non-spark, non-flame particles
 void updateAsSpark(struct particle *theParticle); //Updates sparks (All particles, not just trailing ones)
+void updateAsSpike(struct particle *theParticle); //MAGIC!!!
 void updateAsBunsen(struct particle *flame); //Updates flame particles
 void processBlackHoleGravity(struct particle *theParticle, struct particle *theBlackHole); //Changes theParticle's vx and vy based on where blackHole is
 void drawText(ALLEGRO_FONT *font24, ALLEGRO_FONT *font16, ALLEGRO_COLOR color, ALLEGRO_COLOR buttonColor); //draws the text and fills in selected buttons
@@ -58,6 +60,7 @@ bool isShowing[NUM_BUTTONS]; //Used to hide some buttons from screen when using 
 bool showButtons = true; //Used to hide all buttons
 ColorGenerator *colorGen; //Generates colors for the particles
 bool showColors = true; //Used to hide color sliders (held in ColorGenerator class)
+bool dontErase = false;
 float vMin[2], vMax[2]; //Lowest and highest possible values for the velocity sliders
 
 int main(void){
@@ -127,6 +130,7 @@ int main(void){
 	buttons[SELECT_BLACKHOLE] = new Button(width-30,165,20,20,button1,button2,button3);
 	buttons[SELECT_GRAVITY_BALL] = new Button(width-30,195,20,20,button1,button2,button3);
 	buttons[SELECT_BUNSEN] = new Button(width-30,225,20,20,button1,button2,button3);
+	buttons[SELECT_SPIKES] = new Button(width-30,255,20,20,button1,button2,button3);
 	buttons[EXPLOSIVE_UP] = new Button(15,75,20,20,button1,button2,button3);
 	buttons[EXPLOSIVE_DOWN] = new Button(50,75,20,20,button1,button2,button3);
 	buttons[PART_PER_TICK_UP] = new Button(15,145,20,20,button1,button2,button3);
@@ -139,6 +143,7 @@ int main(void){
 	buttons[RADIUS_DOWN] = new Button(50,235,20,20,button1,button2,button3);
 	buttons[SELECT_REALISTIC_GRAVITY] = new Button(15,265,20,20,button1,button2,button3);
 	buttons[SELECT_PRETTY_GRAVITY] = new Button(15,295,20,20,button1,button2,button3);
+	buttons[SELECT_DONT_ERASE] = new Button(15,325,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_CIRCLE] = new Button(width-30,height-55,20,20,button1,button2,button3);
 	buttons[SELECT_SHAPE_SQUARE] = new Button(width-30,height-25,20,20,button1,button2,button3);
 
@@ -304,37 +309,47 @@ int main(void){
 						processBlackHoleGravity(curParticle, curBlackHole); //update velocity based on position relative to black hole
 						curBlackHole = curBlackHole->nextParticle;
 					}
-					if(particleType == SELECT_BALL)
-						updateAsBall(curParticle); //Update as a ball
-					else if(particleType == SELECT_CIRCLES){
-						updateAsBall(curParticle); //Update as a circle (same as ball)
-						curParticle->size = height - curParticle->y; //Change size so that bottom of circle is touching the floor
-					}else if(particleType == SELECT_BUNSEN){
-						updateAsBunsen(curParticle); //Update as flame
-					}else if(particleType == SELECT_SPARK){
-						updateAsSpark(curParticle); //Update as spark
-						if(curParticle->size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
-							struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
-							createNewSparkle(curParticle, newSparkle); //Create new trailing spark
-							firstParticle = insertNewParticleBySize(firstParticle, newSparkle);
-							numParticles++;
-						}
-					}else if(particleType == SELECT_FIZZLE){ //Not really sure how it works... Ooops...
-						updateAsSpark(curParticle);
-						if(iter % sparkliness == 0){
-							struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
-							createNewSparkle(curParticle, newSparkle);
-							firstParticle = insertNewParticleBySize(firstParticle, newSparkle);
-							numParticles++;
-						}
-					}else if(particleType == SELECT_GRAVITY_BALL){
-						updateAsBall(curParticle); //Updates like a ball
-						struct particle* curOtherParticle = curParticle->nextParticle; //will iterate through all particles that occur later in the list
-						while(curOtherParticle != NULL){
-							processBlackHoleGravity(curParticle,curOtherParticle); //Calculate direction cur is pullled by other
-							processBlackHoleGravity(curOtherParticle,curParticle); //Calculate direction other is pulled by cur
-							curOtherParticle = curOtherParticle->nextParticle;
-						}
+					switch(particleType){
+						case SELECT_BALL:
+							updateAsBall(curParticle); //Update as a ball
+							break;
+						case SELECT_CIRCLES:
+							updateAsBall(curParticle); //Update as a circle (same as ball)
+							curParticle->size = height - curParticle->y; //Change size so that bottom of circle is touching the floor
+							break;
+						case SELECT_BUNSEN:
+							updateAsBunsen(curParticle); //Update as flame
+							break;
+						case SELECT_SPIKES:
+							updateAsSpike(curParticle);
+							break;
+						case SELECT_SPARK:
+							updateAsSpark(curParticle); //Update as spark
+							if(curParticle->size == radius && curSparkle == 0){ //Create a new trailing if the particle isn't a trailing spark (has original radius) and if curSparkle=0 (based on sparkliness)
+								struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
+								createNewSparkle(curParticle, newSparkle); //Create new trailing spark
+								firstParticle = insertNewParticleBySize(firstParticle, newSparkle);
+								numParticles++;
+							}
+							break;
+						case SELECT_FIZZLE: //Not really sure how it works... Ooops...
+							updateAsSpark(curParticle);
+							if(iter % sparkliness == 0){
+								struct particle* newSparkle = (struct particle*)malloc(sizeof(struct particle));
+								createNewSparkle(curParticle, newSparkle);
+								firstParticle = insertNewParticleBySize(firstParticle, newSparkle);
+								numParticles++;
+							}
+							break;
+						case SELECT_GRAVITY_BALL:
+							updateAsBall(curParticle); //Updates like a ball
+							struct particle* curOtherParticle = curParticle->nextParticle; //will iterate through all particles that occur later in the list
+							while(curOtherParticle != NULL){
+								processBlackHoleGravity(curParticle,curOtherParticle); //Calculate direction cur is pullled by other
+								processBlackHoleGravity(curOtherParticle,curParticle); //Calculate direction other is pulled by cur
+								curOtherParticle = curOtherParticle->nextParticle;
+							}
+							break;
 					}
 					curParticle = curParticle->nextParticle;
 				}
@@ -373,6 +388,7 @@ int main(void){
 				al_peek_next_event(event_queue, &ev2);
 			}
 			break;
+			
 		case ALLEGRO_EVENT_MOUSE_AXES:
 			mouseX = ev.mouse.x;
 			mouseY = ev.mouse.y;
@@ -383,6 +399,7 @@ int main(void){
 				al_peek_next_event(event_queue, &ev3);
 			}
 			break;
+			
 		case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
 			mouseDown = true;
 			isUsingButton = false;
@@ -415,6 +432,7 @@ int main(void){
 				}
 			}
 			break;
+			
 		case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
 			mouseDown = false;
 			for(int i=0; i<NUM_BUTTONS; i++){
@@ -436,6 +454,7 @@ int main(void){
 					showButtons = true;
 				}
 				break;
+				
 			case ALLEGRO_KEY_C:
 				showColors = !showColors;
 				break;
@@ -463,6 +482,11 @@ int main(void){
 			case ALLEGRO_KEY_8:
 				processButtonClick(buttons[SELECT_BUNSEN], SELECT_BUNSEN);
 				break;
+			case ALLEGRO_KEY_9:
+				processButtonClick(buttons[SELECT_SPIKES], SELECT_SPIKES);
+				drawText(font24, font16, textcolor, button3);
+				break;
+				
 			case ALLEGRO_KEY_S:
 				saveNewBackground = true;
 				break;
@@ -498,18 +522,25 @@ int main(void){
 				firstBlackHole = NULL;
 				numParticles = 0;
 				numBlackHoles = 0;
+				al_clear_to_color(al_map_rgb(0,0,0));
+				drawText(font24, font16, textcolor, button3);
 				break;
 			}
 			break;
+			
 		case ALLEGRO_EVENT_DISPLAY_RESIZE:
 			break;
+			
 		case ALLEGRO_EVENT_DISPLAY_CLOSE:
 			done = true;
 			break;
 		}
+		
+		
 		if(redraw && (al_is_event_queue_empty(event_queue))){
 			redraw = false;
-			al_draw_bitmap(background, 0, 0, 0);
+			if(particleType != SELECT_SPIKES && !dontErase)
+				al_draw_bitmap(background, 0, 0, 0);
 
 			if(saveNewBackground){
 				al_set_target_bitmap(background);
@@ -542,6 +573,7 @@ int main(void){
 				al_set_target_bitmap(al_get_backbuffer(display));
 				saveNewBackground = false;
 			}
+			
 			if(showButtons)
 				for(int i=0; i<NUM_BUTTONS; i++){
 					if(isShowing[i])
@@ -553,14 +585,16 @@ int main(void){
 
 			if(showColors)
 				colorGen->draw();
-			if(showButtons)
+			if(showButtons && (particleType != SELECT_SPIKES && !dontErase))
 				drawText(font24, font16, textcolor, button3);
 			
 			al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", numParticles);
 			al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", numBlackHoles);
 
 			al_flip_display();
-			al_clear_to_color(al_map_rgb(0,0,0));
+			
+			if(particleType != SELECT_SPIKES && !dontErase)
+				al_clear_to_color(al_map_rgb(0,0,0));
 		}
 	}
 
@@ -618,6 +652,9 @@ void processButtonClick(Button *button, int i){
 	case SELECT_BUNSEN:
 		particleType = SELECT_BUNSEN;
 		break;
+	case SELECT_SPIKES:
+		particleType = SELECT_SPIKES;
+		break;
 	case EXPLOSIVE_UP:
 		explosiveness += 0.2;
 		if(explosiveness > 100)
@@ -673,6 +710,9 @@ void processButtonClick(Button *button, int i){
 		break;
 	case SELECT_PRETTY_GRAVITY:
 		gravityType = SELECT_PRETTY_GRAVITY;
+		break;
+	case SELECT_DONT_ERASE:
+		dontErase = !dontErase;
 		break;
 	case SELECT_SHAPE_CIRCLE:
 		particleShape = SELECT_SHAPE_CIRCLE;
@@ -803,22 +843,36 @@ void updateAsSpark(struct particle * theParticle){
 		theParticle->vx *= 0.95;
 	theParticle->vy *= 0.95;
 
-	theParticle->x += theParticle->vx;
-	theParticle->y += theParticle->vy;
-	theParticle->vy += gravity/FPS * 0.8;
+	updateAsBall(theParticle);
+	theParticle->vy -= gravity/FPS * 0.2;
+};
 
-	if(theParticle->x + theParticle->size > width || theParticle->x - theParticle->size < 0){
-		theParticle->vx *= co_of_restitution;
-		if(theParticle->x - theParticle->size < 0)
-			theParticle->x = theParticle->size;
-		else
-			theParticle->x = width - theParticle->size;
+void updateAsSpike(struct particle * theParticle){
+	unsigned char r, g, b;
+	al_unmap_rgb(theParticle->color, &r, &g, &b);
+	if(r<252) r+=4;
+	if(g<252) g+=4;
+	if(b<252) b+=4;
+	theParticle->color = al_map_rgb(r,g,b);
+	theParticle->age++;
+	
+	//if(((int)theParticle->age) % 3 == 0)
+		theParticle->size *= 0.93;
+	
+	if(theParticle->size < 1){
+		theParticle->x = -10;
+		theParticle->vx = 0;
+		theParticle->y = -10;
+		theParticle->vy = 0;
+		theParticle->alive = false;
 	}
-	if(theParticle->y + theParticle->size > height){
-		theParticle->vy *= co_of_restitution;
-		if(theParticle->size != theParticle->y)
-			theParticle->y = height - theParticle->size;
-	}
+
+	//if(theParticle->vx > 1 || theParticle->vx < -1)
+		theParticle->vx *= 0.95;
+	theParticle->vy *= 0.95;
+	
+	updateAsBall(theParticle);
+	theParticle->vy -= gravity/FPS * 1.0;
 };
 
 void updateAsBunsen(struct particle *flame){
@@ -902,12 +956,16 @@ void drawText(ALLEGRO_FONT *font24,ALLEGRO_FONT *font16, ALLEGRO_COLOR color, AL
 		al_draw_text(font24, color, width-40, 165, ALLEGRO_ALIGN_RIGHT, "Black Hole");
 		al_draw_text(font24, color, width-40, 195, ALLEGRO_ALIGN_RIGHT, "Gravity Ball");
 		al_draw_text(font24, color, width-40, 225, ALLEGRO_ALIGN_RIGHT, "Flame");
+		al_draw_text(font24, color, width-40, 255, ALLEGRO_ALIGN_RIGHT, "Spikes");
 		al_draw_text(font24, color, 50, 265, ALLEGRO_ALIGN_LEFT, "Realistic Gravity");
 		al_draw_text(font24, color, 50, 295, ALLEGRO_ALIGN_LEFT, "Pretty Gravity");
+		al_draw_text(font24, color, 50, 325, ALLEGRO_ALIGN_LEFT, "Don't Erase");
 		al_draw_text(font24, color, width-40, height-25, ALLEGRO_ALIGN_RIGHT, "Square");
 		al_draw_text(font24, color, width-40, height-55, ALLEGRO_ALIGN_RIGHT, "Circle");
 	}
-	al_draw_rectangle(width-24, (particleType-4)*30 + 20, width-16, (particleType-4)*30 + 29, buttonColor, 8);
-	al_draw_rectangle(width-24, (particleShape-NUM_BUTTONS)*30 + height+9, width-16, (particleShape-NUM_BUTTONS)*30 + height+18, buttonColor, 8);
-	al_draw_rectangle(19, (gravityType-NUM_BUTTONS)*30 + 389, 28, (gravityType-NUM_BUTTONS)*30 + 398, buttonColor, 8);
+	al_draw_filled_rectangle(width-28, (particleType-4)*30 + 16, width-12, (particleType-4)*30 + 33, buttonColor);
+	al_draw_filled_rectangle(width-28, (particleShape-NUM_BUTTONS)*30 + height+5, width-12, (particleShape-NUM_BUTTONS)*30 + height+22, buttonColor);
+	al_draw_filled_rectangle(15, (gravityType-NUM_BUTTONS)*30 + 415, 32, (gravityType-NUM_BUTTONS)*30 + 432, buttonColor);
+	if(dontErase)
+		al_draw_filled_rectangle(15, 325, 32, 342, buttonColor);
 };
