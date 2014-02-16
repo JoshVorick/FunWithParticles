@@ -2,7 +2,7 @@ FunWithParticles
 ================
 
 This is a game/simulator that I started after having my wisdom teeth pulled. It started out as a bouncy ball simulator with random colors and has developed from there. This is, in my opinion, extremely fun to mess around with. By tinkering with the different variables and switching bewtween particle types (i.e. black hole -> frozen -> spark -> ball) you can make some really fascinating patterns (see video below or screenshots at bottom of readme for a few examples). 
-### ![Video demonstrating parts of this program](https://www.youtube.com/watch?v=ij0-msWfhqQ)
+### [Video demonstrating parts of this program](https://www.youtube.com/watch?v=ij0-msWfhqQ)
 Features
 ========
 ### Particle Types
@@ -14,7 +14,7 @@ Features
 *  **Black Hole:** All particles on screen (except for other black holes) will get pulled toward the black hole. While placing black holes, all other particles get frozen. Black Holes do not move.
 *  **Gravity Ball:** All particles pull all other particles (except black holes) towards each other. Note: Gets very crazy very quickly.
 *  **Flame:** A bunsen burner-like flame. Use Gravity to change its size. My friends were joking around with my fascination with the bunsen burner saying that there won't be bunsen burners in computer science. I proved them wrong.
-*  **Spikes:** See screenshot left of flame. This makes 3Dish spike balls. This was inspired by ![this gif](http://i.imgur.com/CCDduR6) and is my personal favorite.
+*  **Spikes:** See screenshot left of flame. This makes 3Dish spike balls. This was inspired by [this gif](http://i.imgur.com/CCDduR6) and is my personal favorite.
 
 ### Variables
 * **Coefficient of Restitution:** How much speed particles retain after bouncing off a wall.
