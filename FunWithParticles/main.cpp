@@ -13,14 +13,15 @@ using namespace std;
 
 #define FPS 120
 
-enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES,
+enum buttons{CO_OF_REST_UP, CO_OF_REST_DOWN, GRAVITY_UP, GRAVITY_DOWN, 
+	SELECT_BALL, SELECT_SPARK, SELECT_FIZZLE, SELECT_CIRCLES,
 	SELECT_FROZEN, SELECT_BLACKHOLE, SELECT_GRAVITY_BALL, SELECT_BUNSEN, SELECT_SPIKES, 
 	EXPLOSIVE_UP, EXPLOSIVE_DOWN, PART_PER_TICK_UP, PART_PER_TICK_DOWN, SPARK_TRAIL_UP, SPARK_TRAIL_DOWN, 
 	PARTICLE_NUMBER_UP, PARTICLE_NUMBER_DOWN, RADIUS_UP, RADIUS_DOWN, SELECT_REALISTIC_GRAVITY, SELECT_PRETTY_GRAVITY, SELECT_DONT_ERASE, SELECT_SHAPE_CIRCLE, SELECT_SHAPE_SQUARE}; //names of all the buttons
 
 const int NUM_BUTTONS = 28; //number of buttons
 
-const int width = 800; //Screen width
+const int width = 1200; //Screen width
 const int height = 800; //Screen height
 
 void processButtonClick(Button *button, int i); //Does stuff based on which button was clicked
@@ -267,8 +268,8 @@ int main(void){
 						curParticle = curParticle->nextParticle;
 					}
 				}
-				else if(numParticles > 3000 * maxNumOfParticles / (numBlackHoles+1)){
-					for(int i=0; i < 3000 * maxNumOfParticles / (numBlackHoles+1); i++){
+				else if(numParticles > 1000 * maxNumOfParticles / (numBlackHoles+1)){
+					for(int i=0; i < 1000 * maxNumOfParticles / (numBlackHoles+1); i++){
 						curParticle = curParticle->nextParticle;
 					}
 					while(curParticle != NULL){
@@ -296,6 +297,7 @@ int main(void){
 					}
 				}
 			}
+			
 			//Update particles
 			if(particleType != SELECT_FROZEN){ //Don't update if FROZEN is selected
 				struct particle* curParticle; //pointer to particle curently being updated
@@ -362,6 +364,7 @@ int main(void){
 				firstParticle = firstParticle->nextParticle;
 				free(temp);
 			}
+			
 			struct particle* curParticle;
 			curParticle = firstParticle;
 			struct particle* prevParticle;
@@ -404,16 +407,64 @@ int main(void){
 			mouseDown = true;
 			isUsingButton = false;
 
-			if(showColors)
-				if(colorGen->processMouseCoor(mouseX, mouseY, mouseDown))
-					isUsingButton = true;
-
-			for(int i=0; i<NUM_BUTTONS; i++){
-				if(isShowing[i] && buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
-					processButtonClick(buttons[i], i);
-					isUsingButton = true;
+			if(showColors) 
+				if(colorGen->processMouseCoor(mouseX, mouseY, mouseDown)) //True if slider is being moved
+					isUsingButton = true; //If a slider is being used, sets this to true
+			
+			bool spikes;
+			spikes = false;
+			
+			if(showButtons){
+				for(int i=0; i<NUM_BUTTONS; i++){
+					if(isShowing[i] && buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
+						processButtonClick(buttons[i], i);
+						if(i == SELECT_SPIKES && !dontErase){
+							dontErase = true;
+							spikes = 1;
+						}
+						isUsingButton = true;
+					}
+				}
+				if(spikes || buttons[SELECT_DONT_ERASE]->processMouseCoor(mouseX, mouseY, mouseDown)){
+					al_clear_to_color(al_map_rgb(0,0,0));
+					if(dontErase && showButtons){
+						if(showButtons){
+							for(int i=0; i<NUM_BUTTONS; i++){
+								if(isShowing[i])
+									buttons[i]->draw();
+							}for(int i=0; i<2; i++){
+								vSlideMin[i]->draw();
+								vSlideMax[i]->draw();
+							}
+							drawText(font24, font16, textcolor, button3);
+						}
+							
+						if(showColors)
+							colorGen->draw();
+						
+						al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", numParticles);
+						al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", numBlackHoles);
+					}
+				}
+				for(int i=0; i<2; i++){
+					if(vSlideMin[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
+						if(vSlideMin[i]->getLocation() > vMax[i])
+							vSlideMin[i]->setLocation(vMax[i]);
+						vMin[i] = vSlideMin[i]->getLocation();
+						vSlideMax[i]->setMin(vMin[i]);
+						isUsingButton = true;
+						break;
+					}if(vSlideMax[i]->processMouseCoor(mouseX, mouseY, mouseDown)){
+						if(vSlideMax[i]->getLocation() < vMin[i])
+							vSlideMax[i]->setLocation(vMin[i]);
+						vMax[i] = vSlideMax[i]->getLocation();
+						vSlideMin[i]->setMax(vMax[i]);
+						isUsingButton = true;
+						break;
+					}
 				}
 			}
+
 			if(!isUsingButton){
 				if(particleType != SELECT_BLACKHOLE){
 					struct particle* newParticle = (struct particle*)malloc(sizeof(struct particle));
@@ -439,11 +490,14 @@ int main(void){
 				buttons[i]->processMouseCoor(mouseX, mouseY, mouseDown);
 			}
 			break;
+			
 		case ALLEGRO_EVENT_KEY_DOWN:
-			switch(ev.keyboard.keycode){
+			switch(ev.keyboard.keycode)
+			{
 			case ALLEGRO_KEY_ESCAPE:
 				done = true;
 				break;
+				
 			case ALLEGRO_KEY_B:
 				if(showButtons){
 					showButtons = false;
@@ -458,30 +512,39 @@ int main(void){
 			case ALLEGRO_KEY_C:
 				showColors = !showColors;
 				break;
+				
 			case ALLEGRO_KEY_1:
 				processButtonClick(buttons[SELECT_BALL], SELECT_BALL);
 				break;
+				
 			case ALLEGRO_KEY_2:
 				processButtonClick(buttons[SELECT_SPARK], SELECT_SPARK);
 				break;
+				
 			case ALLEGRO_KEY_3:
 				processButtonClick(buttons[SELECT_FIZZLE], SELECT_FIZZLE);
 				break;
+				
 			case ALLEGRO_KEY_4:
 				processButtonClick(buttons[SELECT_CIRCLES], SELECT_CIRCLES);
 				break;
+				
 			case ALLEGRO_KEY_5:
 				processButtonClick(buttons[SELECT_FROZEN], SELECT_FROZEN);
 				break;
+				
 			case ALLEGRO_KEY_6:
 				processButtonClick(buttons[SELECT_BLACKHOLE], SELECT_BLACKHOLE);
 				break;
+				
 			case ALLEGRO_KEY_7:
 				processButtonClick(buttons[SELECT_GRAVITY_BALL], SELECT_GRAVITY_BALL);
 				break;
+				
 			case ALLEGRO_KEY_8:
 				processButtonClick(buttons[SELECT_BUNSEN], SELECT_BUNSEN);
 				break;
+				
 			case ALLEGRO_KEY_9:
 				processButtonClick(buttons[SELECT_SPIKES], SELECT_SPIKES);
 				drawText(font24, font16, textcolor, button3);
@@ -490,14 +553,17 @@ int main(void){
 			case ALLEGRO_KEY_S:
 				saveNewBackground = true;
 				break;
+				
 			case ALLEGRO_KEY_V:
 				al_set_target_bitmap(background); //Set bg to be the one drawn on
 				al_clear_to_color(colorGen->getNextColor()); //Clear bg to random color
 				al_set_target_bitmap(al_get_backbuffer(display)); //Set drawing target back to display
 				break;
+				
 			case ALLEGRO_KEY_N:
 				textcolor = colorGen->getNextColor();
 				break;
+				
 			case ALLEGRO_KEY_M:
 				button1 = colorGen->getNextColor();
 				button2 = colorGen->getNextColor();
@@ -505,6 +571,7 @@ int main(void){
 				for(int i=0; i<NUM_BUTTONS; i++)
 					buttons[i]->setNewColors(button1, button2, button3);
 				break;
+				
 			case ALLEGRO_KEY_X:
 				struct particle* curParticle = firstParticle;
 				while(curParticle != NULL){
@@ -523,7 +590,24 @@ int main(void){
 				numParticles = 0;
 				numBlackHoles = 0;
 				al_clear_to_color(al_map_rgb(0,0,0));
-				drawText(font24, font16, textcolor, button3);
+				if(dontErase && showButtons){
+					if(showButtons){
+						for(int i=0; i<NUM_BUTTONS; i++){
+							if(isShowing[i])
+								buttons[i]->draw();
+						}for(int i=0; i<2; i++){
+							vSlideMin[i]->draw();
+							vSlideMax[i]->draw();
+						}
+						drawText(font24, font16, textcolor, button3);
+					}
+						
+					if(showColors)
+						colorGen->draw();
+					
+					al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", numParticles);
+					al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", numBlackHoles);
+				}
 				break;
 			}
 			break;
@@ -574,27 +658,30 @@ int main(void){
 				saveNewBackground = false;
 			}
 			
-			if(showButtons)
-				for(int i=0; i<NUM_BUTTONS; i++){
-					if(isShowing[i])
-						buttons[i]->draw();
-				}for(int i=0; i<2; i++){
-					vSlideMin[i]->draw();
-					vSlideMax[i]->draw();
+			if(!dontErase){
+				if(showButtons){
+					for(int i=0; i<NUM_BUTTONS; i++){
+						if(isShowing[i])
+							buttons[i]->draw();
+					}for(int i=0; i<2; i++){
+						vSlideMin[i]->draw();
+						vSlideMax[i]->draw();
+					}
+					drawText(font24, font16, textcolor, button3);
 				}
+					
+				if(showColors)
+					colorGen->draw();
+				
+				al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", numParticles);
+				al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", numBlackHoles);
 
-			if(showColors)
-				colorGen->draw();
-			if(showButtons && (particleType != SELECT_SPIKES && !dontErase))
-				drawText(font24, font16, textcolor, button3);
-			
-			al_draw_textf(font24, textcolor, 10, height-60, 0, "Number of Balls: %i", numParticles);
-			al_draw_textf(font24, textcolor, 10, height-30, 0, "Number of Black Holes: %i", numBlackHoles);
-
-			al_flip_display();
-			
-			if(particleType != SELECT_SPIKES && !dontErase)
+				al_flip_display();
+				
 				al_clear_to_color(al_map_rgb(0,0,0));
+			}else
+				al_flip_display();
+					
 		}
 	}
 
@@ -810,19 +897,37 @@ void updateAsBall(struct particle *theParticle){
 	theParticle->y += theParticle->vy;
 	theParticle->vy += gravity/FPS;
 	
-	if(theParticle->x + theParticle->size > width || theParticle->x - theParticle->size < 0){
-		theParticle->vx *= co_of_restitution;
-		if(theParticle->x < theParticle->size)
-			theParticle->x = theParticle->size;
-		else
-			theParticle->x = width - theParticle->size;
-	}
-	if(theParticle->y + theParticle->size > height || theParticle->y - theParticle->size < 0){
-		theParticle->vy *= co_of_restitution;
-		if(theParticle->y + theParticle->size > height)
-			theParticle->y = height - theParticle->size;
-		else
-			theParticle->y = theParticle->size;
+	if(particleType != SELECT_CIRCLES){
+		if(theParticle->x + theParticle->size > width || theParticle->x - theParticle->size < 0){
+			theParticle->vx *= co_of_restitution;
+			if(theParticle->x < theParticle->size)
+				theParticle->x = theParticle->size;
+			else
+				theParticle->x = width - theParticle->size;
+		}
+		if(theParticle->y + theParticle->size > height || theParticle->y - theParticle->size < 0){
+			theParticle->vy *= co_of_restitution;
+			if(theParticle->y + theParticle->size > height)
+				theParticle->y = height - theParticle->size;
+			else
+				theParticle->y = theParticle->size;
+		}
+	}else{
+		if(theParticle->x + 5 > width || theParticle->x - 5 < 0){
+			theParticle->vx *= co_of_restitution;
+			if(theParticle->x < theParticle->size)
+				theParticle->x = theParticle->size;
+			else
+				theParticle->x = width - theParticle->size;
+		}
+		if(theParticle->y + 5 > height || theParticle->y - 5 < 0){
+			theParticle->vy *= co_of_restitution;
+			if(theParticle->y + theParticle->size > height)
+				theParticle->y = height - theParticle->size;
+			else
+				theParticle->y = theParticle->size;
+		}
+	
 	}
 };
 
